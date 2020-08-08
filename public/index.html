@@ -1,11 +1,11 @@
 <head>
-    <title>Codenames.plus</title>
+    <title>Catchphrase.plus</title>
     <!--meta-->
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta charset="UTF-8">
     <meta property="og:type" content="website">
     <!--title-->
-    <meta property="og:title" content="Codenames.plus">
+    <meta property="og:title" content="Catchphrase.plus">
     <!--page description-->
     <meta name="description"
           content="Codenames.plus - The classic 'Codenames' card / boardgame in your browser! Play with your friends online instantly just by creating a new room and sharing the info.">
@@ -82,13 +82,13 @@
 </div>
 <div id='afk-window' class='above hidden'>
     <h3>Are you still here?</h3>
-    <button id='not-afk' class="button">Yes</button>
+    <button id='not-afk'>Yes</button>
 </div>
 <div id='server-message' class='above hidden'>
     <h3 id='message'>TEST MESSAGE</h3>
-    <button id='server-message-okay' class="button">Okay</button>
+    <button id='server-message-okay'>Okay</button>
 </div>
-<button id='about-button' class='above button'>About</button>
+<button id='about-button' class='above'>About</button>
 <div id="overlay" class="hidden"></div>
 <div id="join-game">
     <h1>Catchphrase.plus</h1>
@@ -108,13 +108,13 @@
     </form>
     <p id='error-message'></p>
     <div class="container">
-        <button id='join-enter' class="button">Enter Room</button>
-        <button id='join-create' class="button">Create Room</button>
+        <button id='join-enter'>Enter Room</button>
+        <button id='join-create'>Create Room</button>
     </div>
     <!--    <p id="server-note">Due to the recent surge in popularity, the server is expereiencing strain during high traffic times on weekend nights (~1:00-5:00 UTC).<br><br>My apologies if you experience time-outs / freezing.</p>-->
 </div>
 <div id="game" style="display:none">
-    <button id="leave-room" class="button">Leave Room</button>
+    <button id="leave-room">Leave Room</button>
     <div id='title'>
         <h1>Catchphrase</h1>
     </div>
@@ -148,32 +148,35 @@
             <div id="info">
                 <p id='score'><span id='score-red'></span> - <span id='score-blue'></span></p>
                 <h2 id='turn'><span id='status'></span> <span id='timer'></span></h2>
-                <button id='end-turn' class="button">End Turn</button>
-            </div>
-            <div id="board">
-                <div class='row' id='row-1'>
-                    <button class='tile' id='word' onClick="tileClicked(0,0)"></button>
-                </div>
-                <div class='row' id='row-2'>
-                    <button id="next" onClick=""></button>
-                    <button id="start-stop" onClick=""></button>
-                </div>
-            </div>
-            <div id="toggles">
-                <div class='toggle'>
-                    <button id='role-guesser' disabled>Guesser</button>
-                    <button id='role-spymaster'>Spymaster</button>
-                </div>
-                <div class='toggle' id='player-difficulty'>
-                    <button id='difficulty-normal' disabled>Normal</button>
-                    <button id='difficulty-hard'>Hard</button>
-                </div>
-                <div class='toggle'>
-                    <button id="mode-casual" disabled>Casual</button>
-                    <button id="mode-timed">Timed</button>
-                </div>
                 <button id='new-game'>New Game</button>
             </div>
+            <div id="board">
+                <div class="row">
+                    <div id='word-container' class="blue">
+                        <h2 id="word">TEST WORD</h2>
+                    </div>
+                </div>
+                <div class='row'>
+                    <button id="skip" onClick="">Skip</button>
+                    <button id="next" onClick="">Next Player</button>
+                    <button id="start-stop" onClick="">Start/Stop</button>
+                </div>
+            </div>
+<!--            <div id="toggles">-->
+<!--                <div class='toggle'>-->
+<!--                    <button id='role-guesser' class="toggle-left" disabled>Guesser</button>-->
+<!--                    <button id='role-spymaster' class="toggle-right">Spymaster</button>-->
+<!--                </div>-->
+<!--                <div class='toggle hidden' id='player-difficulty'>-->
+<!--                    <button id='difficulty-normal' class="toggle-left" disabled>Normal</button>-->
+<!--                    <button id='difficulty-hard' class="toggle-right">Hard</button>-->
+<!--                </div>-->
+<!--                <div class='toggle'>-->
+<!--                    <button id="mode-casual" class="toggle-left" disabled>Casual</button>-->
+<!--                    <button id="mode-timed" class="toggle-right">Timed</button>-->
+<!--                </div>-->
+<!--                <button id='new-game'>New Game</button>-->
+<!--            </div>-->
         </div>
         <div id="space"></div>
     </div>

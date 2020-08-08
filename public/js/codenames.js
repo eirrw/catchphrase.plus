@@ -30,7 +30,7 @@ let leaveRoom = document.getElementById('leave-room')
 let joinRed = document.getElementById('join-red')
 let joinBlue = document.getElementById('join-blue')
 let randomizeTeams = document.getElementById('randomize-teams')
-let endTurn = document.getElementById('end-turn')
+// let endTurn = document.getElementById('end-turn')
 let newGame = document.getElementById('new-game')
 let buttonRoleGuesser = document.getElementById('role-guesser')
 let buttonRoleSpymaster = document.getElementById('role-spymaster')
@@ -68,10 +68,10 @@ let difficulty = 'normal'
 let mode = 'casual'
 
 // Show the proper toggle options
-buttonModeCasual.disabled = true;
-buttonModeTimed.disabled = false;
-buttonRoleGuesser.disabled = true;
-buttonRoleSpymaster.disabled = false;
+// buttonModeCasual.disabled = true;
+// buttonModeTimed.disabled = false;
+// buttonRoleGuesser.disabled = true;
+// buttonRoleSpymaster.disabled = false;
 
 
 // UI Interaction with server
@@ -115,34 +115,6 @@ randomizeTeams.onclick = () => {
 // User Starts New Game
 newGame.onclick = () => {         
   socket.emit('newGame', {})
-}
-// User Picks spymaster Role
-buttonRoleSpymaster.onclick = () => { 
-  socket.emit('switchRole', {role:'spymaster'})
-}
-// User Picks guesser Role
-buttonRoleGuesser.onclick = () => {   
-  socket.emit('switchRole', {role:'guesser'})
-}
-// User Picks Hard Difficulty
-buttonDifficultyHard.onclick = () => {
-  socket.emit('switchDifficulty', {difficulty:'hard'})
-}
-// User Picks Normal Difficulty 
-buttonDifficultyNormal.onclick = () => {
-  socket.emit('switchDifficulty', {difficulty:'normal'})
-}
-// User Picks Timed Mode
-buttonModeTimed.onclick = () => { 
-  socket.emit('switchMode', {mode:'timed'})
-}
-// User Picks Casual Mode
-buttonModeCasual.onclick = () => {
-  socket.emit('switchMode', {mode:'casual'})
-}
-// User Ends Turn
-endTurn.onclick = () => {
-  socket.emit('endTurn', {})
 }
 // User Clicks Tile
 function tileClicked(i,j){
@@ -259,11 +231,11 @@ socket.on('switchRoleResponse', (data) =>{  // Response to Switching Role
     if (playerRole === 'guesser') {
       buttonRoleGuesser.disabled = true;
       buttonRoleSpymaster.disabled = false;
-      toggleDifficulty.style.display = "none"
+      toggleDifficulty.classList.add('hidden')
     } else {
       buttonRoleGuesser.disabled = false;
       buttonRoleSpymaster.disabled = true;
-      toggleDifficulty.style.display = "block"
+      toggleDifficulty.classList.remove('hidden')
     }
     wipeBoard();
   }
@@ -307,9 +279,9 @@ function updateInfo(game, team){
     turnMessage.innerHTML = game.winner + " wins!"
     turnMessage.className = game.winner
   }
-  if (team !== game.turn) endTurn.disabled = true         // Disable end turn button for opposite team
-  else endTurn.disabled = false
-  if (playerRole === 'spymaster') endTurn.disabled = true // Disable end turn button for spymasters
+  // if (team !== game.turn) endTurn.disabled = true         // Disable end turn button for opposite team
+  // else endTurn.disabled = false
+  // if (playerRole === 'spymaster') endTurn.disabled = true // Disable end turn button for spymasters
 }
 
 // Update the clients timer slider
@@ -357,23 +329,6 @@ function updateBoard(board){
       if (playerRole === 'spymaster') button.className += " s"    // Flag all tiles if the client is a spy master
       if (difficulty === 'hard') button.className += " h"         // Flag all tiles if game is in hard mode
     }
-  }
-  // Show the proper toggle options for the game difficulty
-  if (difficulty === 'normal') {
-    buttonDifficultyNormal.disabled = true;
-    buttonDifficultyHard.disabled = false;
-  } else {
-    buttonDifficultyNormal.disabled = false;
-    buttonDifficultyHard.disabled = true;
-  }
-  // Show the proper toggle options for the game mode
-  if (mode === 'casual') {
-    buttonModeCasual.disabled = true;
-    buttonModeTimed.disabled = false;
-    timer.innerHTML = ""
-  } else {
-    buttonModeCasual.disabled = false;
-    buttonModeTimed.disabled = true;
   }
 }
 
