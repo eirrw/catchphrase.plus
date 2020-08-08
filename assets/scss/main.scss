@@ -1,0 +1,456 @@
+@import "assets/scss/variables";
+@import "assets/scss/partials";
+
+body {
+  margin: 32px 0 0;
+  background: $black;
+  color: $black;
+  font-family: $default-font, sans-serif;
+  transition: 0.1s ease-in-out;
+  z-index: 1;
+
+  button {
+    cursor: pointer;
+    font-family: $default-font, sans-serif;
+    border-radius: 3px;
+    border-style: solid;
+  }
+
+  .button {
+    border: 2px solid $white;
+    color: $white;
+    font-size: 16px;
+    background-color: $black;
+  }
+
+  .above {
+    z-index: 3;
+  }
+
+  .hidden {
+    display: none;
+  }
+
+  #overlay {
+    position: fixed;
+    width: 100vw;
+    height: 100vw;
+    background: rgba(60, 60, 60, 0.9);
+    z-index: 2;
+  }
+
+  #about-button {
+    position: absolute;
+    right: 0;
+    margin-top: 20px;
+    margin-right: 20px;
+
+    &.open {
+      color: $black;
+      background: $white;
+    }
+
+    &:hover {
+      background: $light-black;
+    }
+  }
+
+  #about-window {
+    position: absolute;
+    width: 80%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: $white;
+    top: 20px;
+    border-radius: 10px;
+    margin-bottom: 200px;
+
+    ul {
+      position: relative;
+      list-style: square !important;
+      padding: 0 50px 50px;
+      margin-top: 0;
+    }
+
+    h2, h3 {
+      text-align: center;
+    }
+
+    a {
+      position: relative;
+      list-style: square !important;
+      padding: 0 50px 50px;
+      margin-top: 0;
+
+      &:hover {
+        color: $blue;
+      }
+    }
+  }
+
+  #server-message {
+    @extend %modal-frame;
+
+    h3 {
+      text-align: center;
+    }
+
+    button {
+      position: relative;
+      margin: 2%;
+      border-color: $light-black;
+      box-sizing: border-box;
+      padding: 4px;
+      width: 96%;
+      background: $light-black;
+
+      &:hover {
+        background: $blue;
+      }
+    }
+  }
+
+  #afk-window {
+    @extend %modal-frame;
+
+    h3 {
+      text-align: center;
+    }
+
+    button {
+      position: relative;
+      margin: 2%;
+      border-color: $light-black;
+      box-sizing: border-box;
+      padding: 4px;
+      width: 96%;
+      background: $light-black;
+
+      &:hover {
+        background: $blue;
+      }
+    }
+  }
+
+  #join-game {
+    position: absolute;
+    width: 400px;
+    background: $white;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    border-radius: 10px;
+
+    h1 {
+      color: $black;
+      font-size: 32px;
+      margin: 0;
+      padding: 0;
+      text-align: center;
+    }
+
+    .join-input {
+      position: relative;
+      display: block;
+      width: 275px;
+      margin: 0 auto;
+      text-align: left;
+      height: 40px;
+
+      input {
+        float: right;
+        line-height: 18px;
+      }
+    }
+
+    div.container {
+      display: flex;
+
+      button {
+        position: relative;
+        margin: 1%;
+        border: 2px solid $light-black;
+        box-sizing: border-box;
+        padding: 4px;
+        width: 48%;
+        background: $light-black;
+      }
+
+      #join-enter:hover {
+        background: $red;
+      }
+
+      #join-create:hover {
+        background: $blue;
+      }
+    }
+
+    #error-message {
+      height: 15px;
+      text-align: center;
+      margin-top: 5px;
+    }
+  }
+
+  #game {
+    #leave-room {
+      position: absolute;
+      margin-left: 20px;
+
+      &:hover {
+        background: $light-black;
+      }
+    }
+
+    #title {
+      text-align: center;
+      padding: 10px;
+
+      h1 {
+        color: $white;
+        font-size: 22px;
+        margin: 0;
+        padding: 0;
+      }
+
+      #room-name {
+        font-size: 18px;
+        margin: 0;
+        padding: 0;
+        color: $white;
+      }
+    }
+
+    #content {
+      position: absolute;
+      width: 1500px;
+      left: 50%;
+      transform: translate(-50%);
+
+      #left {
+        position: relative;
+        width: 200px;
+        margin-right: 50px;
+        margin-top: 95px;
+        float: left;
+
+        #players {
+          position: relative;
+          width: 100%;
+          margin-bottom: 50px;
+
+          h2 {
+            color: $white;
+            text-align: center;
+            margin: 0;
+          }
+
+          #panel {
+            position: relative;
+            width: 100%;
+            background: $white;
+            border: 2px solid $white;
+            border-radius: 10px;
+            box-sizing: border-box;
+
+            button {
+              position: relative;
+              width: 46%;
+              margin: 2%;
+              border: 2px solid;
+              box-sizing: border-box;
+              padding: 4px;
+
+              &#join-red {
+                border-color: $red;
+                color: $white;
+                background: $red;
+                float: left;
+
+                &:hover {
+                  background: $black;
+                  color: $red;
+                }
+              }
+
+              &#join-blue {
+                border-color: $blue;
+                color: $white;
+                background: $blue;
+
+                &:hover {
+                  background: $black;
+                  color: $blue;
+                }
+              }
+
+              &#randomize-teams {
+                width: 96%;
+                border-color: $light-black;
+                color: $white;
+                background: $light-black;
+
+                &:hover {
+                  background: $black;
+                }
+              }
+            }
+
+            ul {
+              display: inline-block;
+              position: relative;
+              list-style: none;
+              margin: 0;
+              padding: 3px;
+              color: $black;
+              box-sizing: border-box;
+              text-align: center;
+
+              &#undefined-list {
+                width: 100%;
+              }
+
+              &#red-team {
+                width: 50%;
+                float: left;
+                color: $red;
+              }
+
+              &#blue-team {
+                width: 50%;
+                color: $blue;
+              }
+            }
+          }
+        }
+
+        #categories {
+          position: relative;
+          width: 100%;
+          margin: 0;
+
+          h2, p {
+            color: $white;
+            text-align: center;
+            margin: 0 0 20px;
+          }
+
+          button {
+            width: 100%;
+            margin: 0 0 20px;
+            color: $white;
+            background: $black;
+            box-sizing: border-box;
+
+            &.enabled {
+              background: $white;
+              color: $black;
+              font-weight: bold;
+            }
+
+            &:hover {
+              background: $light-black;
+            }
+          }
+        }
+
+        #controls {
+          position: relative;
+          width: 100%;
+
+          label {
+            color: $white;
+          }
+
+          input {
+            width: 100%;
+            margin: 0;
+          }
+        }
+      }
+
+      #app {
+        position: relative;
+        display: block;
+        float: left;
+        width: 1000px;
+        @media(max-width: $bp-small) {
+          width: 950px;
+        }
+
+        #info {
+          display: flex;
+
+          #score {
+            color: #F8FDFF;
+            font-size: 40px;
+            font-weight: bold;
+            width: 33%;
+            height: 100%;
+            line-height: 40px;
+            padding-top: 35px;
+            box-sizing: border-box;
+            float: left;
+            margin: 0 0 0 0.5%;
+
+            #score-red {
+              color: $red;
+            }
+
+            #score-blue {
+              color: $blue;
+            }
+          }
+
+          #turn {
+            width: 33%;
+            height: 100%;
+            margin: 0;
+            font-size: 35px;
+            text-align: center;
+            color: #F8FDFF;
+            float: left;
+
+            .red {
+              color: $red;
+            }
+
+            .blue {
+              color: $blue;
+            }
+          }
+
+          #end-turn {
+            position: absolute;
+            display: block;
+            float: right;
+            margin-right: 0.5%;
+            bottom: 0;
+            right: 0;
+            width: 19%;
+            font-size: 16px;
+            background: #323032;
+            border: 2px solid #F8FDFF;
+            color: #F8FDFF;
+            text-decoration: none;
+
+            &:hover {
+              background: $light-black;
+            }
+
+            &:disabled {
+              background: $black;
+              color: $light-black;
+              border-color: $light-black;
+              cursor: default;
+            }
+          }
+        }
+
+        #board {}
+
+        #toggles {}
+      }
+    }
+  }
+}

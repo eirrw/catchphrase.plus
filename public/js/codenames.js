@@ -150,14 +150,14 @@ function tileClicked(i,j){
 }
 // User Clicks About
 buttonAbout.onclick = () => {
-  if (aboutWindow.style.display === 'none') {
-    aboutWindow.style.display = 'block'
-    overlay.style.display = 'block'
-    buttonAbout.className = 'open above'
+  if (aboutWindow.classList.contains('hidden')) {
+    aboutWindow.classList.remove('hidden')
+    overlay.classList.remove('hidden')
+    buttonAbout.classList.add('open')
   } else {
-    aboutWindow.style.display = 'none'
-    overlay.style.display = 'none'
-    buttonAbout.className = 'above'
+    aboutWindow.classList.add('hidden')
+    overlay.classList.add('hidden')
+    buttonAbout.classList.remove('open')
   }
 }
 // User Clicks card pack
@@ -185,14 +185,14 @@ timerSlider.addEventListener("input", () =>{
 // User confirms theyre not afk
 buttonAfk.onclick = () => {
   socket.emit('active')
-  afkWindow.style.display = 'none'
-  overlay.style.display = 'none'
+  afkWindow.classList.add('hidden')
+  overlay.classList.add('hidden')
 }
 
 // User confirms server message
 buttonServerMessageOkay.onclick = () => {
-  serverMessageWindow.style.display = 'none'
-  overlay.style.display = 'none'
+  serverMessageWindow.classList.add('hidden')
+  overlay.classList.add('hidden')
 }
 
 // Server Responses to this client
@@ -236,21 +236,21 @@ socket.on('newGameResponse', (data) => {    // Response to New Game
 })
 
 socket.on('afkWarning', () => {    // Response to Afk Warning
-  afkWindow.style.display = 'block'
-  overlay.style.display = 'block'
+  afkWindow.classList.remove('hidden')
+  overlay.classList.remove('hidden')
 })
 
 socket.on('afkKicked', () => {    // Response to Afk Kick
-  afkWindow.style.display = 'none'
-  serverMessageWindow.style.display = 'block'
+  afkWindow.classList.add('hidden')
+  serverMessageWindow.classList.remove('hidden')
   serverMessage.innerHTML = 'You were kicked for being AFK'
-  overlay.style.display = 'block'
+  overlay.classList.remove('hidden')
 })
 
 socket.on('serverMessage', (data) => {    // Response to Server message
   serverMessage.innerHTML = data.msg
-  serverMessageWindow.style.display = 'block'
-  overlay.style.display = 'block'
+  serverMessageWindow.classList.remove('hidden')
+  overlay.classList.remove('hidden')
 })
 
 socket.on('switchRoleResponse', (data) =>{  // Response to Switching Role
