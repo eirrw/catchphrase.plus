@@ -219,16 +219,31 @@ body {
 
     #content {
       position: absolute;
-      width: 1500px;
       left: 50%;
       transform: translate(-50%);
+      display: flex;
+
+
+      @media (max-width: $bp-medium) {
+        width: 900px;
+      }
+
+      @media (min-width: $bp-medium) {
+        width: 1100px;
+      }
+
+      @media (min-width: $bp-large) {
+        width: 1500px;
+      }
 
       #left {
-        position: relative;
-        width: 200px;
-        margin-right: 50px;
+        max-width: 15%;
+        margin-right: 5%;
         margin-top: 95px;
-        float: left;
+
+        @media (max-width: $bp-large) {
+          max-width: 20%;
+        }
 
         #players {
           position: relative;
@@ -302,6 +317,11 @@ body {
               box-sizing: border-box;
               text-align: center;
 
+              li {
+                overflow: hidden;
+                text-overflow: ellipsis;
+              }
+
               &#undefined-list {
                 width: 100%;
               }
@@ -370,10 +390,7 @@ body {
         position: relative;
         display: block;
         float: left;
-        width: 1000px;
-        @media(max-width: $bp-small) {
-          width: 950px;
-        }
+        min-width: 70%;
 
         #info {
           position: relative;
@@ -385,7 +402,7 @@ body {
             color: #F8FDFF;
             font-size: 40px;
             font-weight: bold;
-            width: 33%;
+            width: 20%;
             height: 100%;
             line-height: 40px;
             padding-top: 35px;
@@ -403,7 +420,7 @@ body {
           }
 
           #turn {
-            width: 33%;
+            width: 60%;
             height: 100%;
             margin: 0;
             font-size: 35px;
@@ -523,6 +540,14 @@ body {
               }
             }
           }
+        }
+      }
+
+      #space {
+        width: 15%;
+
+        @media (max-width: $bp-large) {
+          display: none;
         }
       }
     }
