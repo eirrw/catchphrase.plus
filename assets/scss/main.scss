@@ -24,7 +24,7 @@ body {
   }
 
   .hidden {
-    display: none;
+    display: none !important;
   }
 
   #overlay {
@@ -489,21 +489,37 @@ body {
               }
             }
 
-            button {
-              width: 20%;
-
-              &:hover {
-                background: $darkgrey;
-              }
-
-              &:disabled {
-                color: $darkgrey;
-                border-color: $darkgrey;
-                cursor: default;
+            &#control-row {
+              button {
+                width: 20%;
 
                 &:hover {
-                  background: $black;
+                  background: $darkgrey;
                 }
+
+                &:disabled {
+                  color: $darkgrey;
+                  border-color: $darkgrey;
+                  cursor: default;
+
+                  &:hover {
+                    background: $black;
+                  }
+                }
+              }
+            }
+
+            &#scoring-row {
+              background: $white;
+              color: $black;
+              border-radius: 10px;
+              z-index: 3;
+
+              button {
+                width: 20%;
+                background: $white;
+                color: $black;
+                border-color: $black;
               }
             }
           }

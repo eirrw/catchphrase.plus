@@ -69,7 +69,7 @@ readline.createInterface({
 // Codenames Game
 class Game{
   constructor(){
-    this.timerAmount = 61 // Default timer value
+    this.timerAmount = 2 // Default timer value
     this.winScore = 7 // default win score
 
     this.words = basewords  // Load default word pack
@@ -80,16 +80,16 @@ class Game{
     this.nlss = false
 
     this.init();
-
-    this.red = this.blue = 0;
   }
 
   init(){
     this.randomTurn()   // When game is created, select red or blue to start, randomly
     this.over = false   // Whether or not the game has been won / lost
+    this.roundOver = false
     this.winner = ''    // Winning team
     this.timer = this.timerAmount // Set the timer
     this.timeRunning = false
+    this.red = this.blue = 0;
 
     this.word = ''       // Init the board
     this.newWord()   // Populate the board
@@ -97,14 +97,12 @@ class Game{
 
   // Check the number of unflipped team tiles and determine if someone won
   checkWin(){
-    this.red =
-    this.blue = this.findType('blue') // unflipped blue tiles
     // Check team winner
-    if (this.red === this.winScore) {
+    if (this.red >= this.winScore) {
       this.over = true
       this.winner = 'red'
     }
-    if (this.blue === this.winScore) {
+    if (this.blue >= this.winScore) {
       this.over = true
       this.winner = 'blue'
     }

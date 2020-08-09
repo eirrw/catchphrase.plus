@@ -167,10 +167,15 @@
                         Previous: <span id="pre-word"></span>
                     </div>
                 </div>
-                <div class='row'>
+                <div class='row' id="control-row">
                     <button id="skip" onClick="skipWord()">Skip Word</button>
                     <button id="next" onClick="nextPlayer()">Next Player</button>
                     <button id="start-stop" onClick="startStop()">Start/Stop</button>
+                </div>
+                <div class="row hidden" id="scoring-row">
+                    <button id="plus-two" onClick="updateScore(7)">Two Points</button>
+                    <button id="plus-one" onClick="updateScore(1)">One Point</button>
+                    <button id="skip-scoring" onClick="updateScore(0)">No Scoring</button>
                 </div>
             </div>
         </div>

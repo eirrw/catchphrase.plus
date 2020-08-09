@@ -186,21 +186,17 @@ io.sockets.on('connection', function(socket){
   // New Game. Called when client starts a new game
   socket.on('newGame', () =>{newGame(socket)})
 
-  // End Turn. Called when client ends teams turn
-  socket.on('endTurn', () => {
-    if (!PLAYER_LIST[socket.id]) return // Prevent Crash
-    let room = PLAYER_LIST[socket.id].room  // Get the room the client was in
-    ROOM_LIST[room].game.switchTurn()       // Switch the room's game's turn
-    gameUpdate(room)                        // Update the game for everyone in this room
-  })
-
-  // Click Tile. Called when client clicks a tile
-  // Data: x and y location of tile in grid
+  // skip the current word
   socket.on('skipWord', () => {skipWord(socket)})
 
+  // change word and pass to the next player
   socket.on('nextPlayer', () => {nextPlayer(socket)})
 
+  // start or stop the current round
   socket.on('startStop', () => {startStop(socket)})
+
+  // update score
+  socket.on('updateScore', (data) => {updateScore(socket, data)})
 
   // Active. Called whenever client interacts with the game, resets afk timer
   socket.on('*', () => {
@@ -401,9 +397,6 @@ function newGame(socket){
   gameUpdate(room) // Update everyone in the room
 }
 
-
-// Click tile function
-// Gets client and the tile they clicked and pushes that change to the rooms game
 function skipWord(socket){
   if (!PLAYER_LIST[socket.id]) return // Prevent Crash
   let room = PLAYER_LIST[socket.id].room  // Get the room that the client called from
@@ -480,6 +473,19 @@ function startStop(socket) {
   }
 }
 
+function updateScore(socket, data) {
+  if (!PLAYER_LIST[socket.id]) return
+  let room = PLAYER_LIST[socket.id].room
+
+  ROOM_LIST[room].game.roundOver = false
+  if (ROOM_LIST[room].game.turn === TEAM_RED) ROOM_LIST[room].game.blue += data.score
+  else ROOM_LIST[room].game.red += data.score
+
+  ROOM_LIST[room].game.checkWin()
+
+  gameUpdate(room)
+}
+
 // Get a list of players on a team
 function getPlayers(room, team) {
   let teamPlayers = []
@@ -506,7 +512,6 @@ function gameUpdate(room){
     players:ROOM_LIST[room].players,
     game:ROOM_LIST[room].game,
     difficulty:ROOM_LIST[room].difficulty,
-    mode:ROOM_LIST[room].mode
   }
   for (let player in ROOM_LIST[room].players){ // For everyone in the passed room
     gameState.team = PLAYER_LIST[player].team  // Add specific clients team info
@@ -568,6 +573,7 @@ setInterval(()=>{
 
       if (ROOM_LIST[room].game.timer < 0){  // If timer runs out, switch that rooms turn
         ROOM_LIST[room].game.timeRunning = false
+        ROOM_LIST[room].game.roundOver = true
         gameUpdate(room)   // Update everyone in the room
       }
       

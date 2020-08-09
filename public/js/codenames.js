@@ -30,7 +30,6 @@ let leaveRoom = document.getElementById('leave-room')
 let joinRed = document.getElementById('join-red')
 let joinBlue = document.getElementById('join-blue')
 let randomizeTeams = document.getElementById('randomize-teams')
-// let endTurn = document.getElementById('end-turn')
 let newGame = document.getElementById('new-game')
 let buttonSkipWord = document.getElementById('skip')
 let buttonNextPlayer = document.getElementById('next')
@@ -54,13 +53,13 @@ let scoreRed = document.getElementById('score-red')
 let scoreBlue = document.getElementById('score-blue')
 let turnMessage = document.getElementById('status')
 let timer = document.getElementById('timer')
+let scorePanel = document.getElementById('scoring-row')
 
 
 // init
 ////////////////////////////////////////////////////////////////////////////
 // Default game settings
 let playerRole = 'guesser'
-let mode = 'casual'
 
 // UI Interaction with server
 ////////////////////////////////////////////////////////////////////////////
@@ -115,6 +114,10 @@ function nextPlayer() {
 
 function startStop() {
   socket.emit('startStop', {})
+}
+
+function updateScore(score) {
+  socket.emit('updateScore', {score: score})
 }
 
 // User Clicks About
@@ -233,27 +236,16 @@ socket.on('switchRole', (data) =>{  // Response to Switching Role
 
 socket.on('gameState', (data) =>{           // Response to gamestate update
   console.log(data)
-  updatePlayerlist(data.players)        // Update the player list for the room
   updateInfo(data.game, data.team)      // Update the games turn information
-  updateTimerSlider(data.game, data.mode)          // Update the games timer slider
+  updateTimerSlider(data.game)          // Update the games timer slider
   updatePacks(data.game)                // Update the games pack information
   updateBoard(data.game.word, data.game.usedWords, data.team, data.game.turn) // Update the board display
+  updatePlayerlist(data.players)        // Update the player list for the room
+  updateRound(data.game.roundOver, data.game.turn)
 })
-
 
 // Utility Functions
 ////////////////////////////////////////////////////////////////////////////
-
-// Wipe all of the descriptor tile classes from each tile
-function wipeBoard(){
-  for (let x = 0; x < 5; x++){
-    let row = document.getElementById('row-' + (x+1))
-    for (let y = 0; y < 5; y++){
-      let button = row.children[y]
-      button.className = 'tile'
-    }
-  }
-}
 
 // Update the game info displayed to the client
 function updateInfo(game){
@@ -261,29 +253,35 @@ function updateInfo(game){
   scoreRed.innerHTML = game.red                           // Update the red tiles left
   turnMessage.innerHTML = game.turn + "'s turn"           // Update the turn msg
   turnMessage.className = game.turn                       // Change color of turn msg
+
+  let disableButtons = playerRole !== 'speaker'           // set default control status
+  buttonSkipWord.disabled = disableButtons
+  buttonNextPlayer.disabled = disableButtons
+  buttonStartStop.disabled = false
+
+  if (!scorePanel.classList.contains('hidden')) scorePanel.classList.add('hidden')
+
   if (game.over){                                         // Display winner
     turnMessage.innerHTML = game.winner + " wins!"
     turnMessage.className = game.winner
+    buttonSkipWord.disabled = true
+    buttonNextPlayer.disabled = true
+    buttonStartStop.disabled = true
+    scorePanel.classList.add('hidden')
+  } else if (game.roundOver && playerRole === 'speaker') { // display round end controls
+    buttonSkipWord.disabled = true
+    buttonNextPlayer.disabled = true
+    buttonStartStop.disabled = true
+    scorePanel.classList.remove('hidden')
   }
-  debugger;
-  let disableButtons = playerRole !== 'speaker'
-  buttonSkipWord.disabled = disableButtons
-  buttonNextPlayer.disabled = disableButtons
 }
 
 // Update the clients timer slider
-function updateTimerSlider(game, mode){
+function updateTimerSlider(game){
   timerSlider.value = (game.timerAmount - 1) / 60
   timerSliderLabel.innerHTML = "Timer Length : " + timerSlider.value + "min"
-
-  // If the mode is not timed, dont show the slider
-  if (mode === 'casual'){
-    timerSlider.style.display = 'none'
-    timerSliderLabel.style.display = 'none'
-  } else {
-    timerSlider.style.display = 'block'
-    timerSliderLabel.style.display = 'block'
-  }
+  timerSlider.style.display = 'block'
+  timerSliderLabel.style.display = 'block'
 }
 
 // Update the pack toggle buttons
@@ -345,7 +343,7 @@ function updatePlayerlist(players){
     let li = document.createElement('li');
     li.innerText = players[i].nickname
     // If the player is a spymaster, put brackets around their name
-    if (players[i].role === 'spymaster') li.innerText = "[" + players[i].nickname + "]"
+    if (players[i].role === 'speaker') li.innerText = "[" + players[i].nickname + "]"
     // Add the player to their teams ul
     if (players[i].team === 'undecided'){
       undefinedList.appendChild(li)
@@ -354,6 +352,15 @@ function updatePlayerlist(players){
     } else if (players[i].team === 'blue'){
       blueTeam.appendChild(li)
     }
+  }
+}
+
+// Update when a round starts or ends
+function updateRound(roundOver, turn) {
+  if (roundOver && playerRole === 'speaker') {
+
+  } else {
+
   }
 }
 
