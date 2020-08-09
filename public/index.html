@@ -155,8 +155,11 @@
                     <div id='word-container' class="hidden">
                         <h2 id="word">TEST WORD</h2>
                     </div>
-                    <div id="word-other-team-guessing">
-
+                    <div id="other-team-guessing" class="hidden">
+                        <h2>The other team is guessing</h2>
+                    </div>
+                    <div id="your-team-guessing" class="hidden">
+                        <h2>Your team is guessing</h2>
                     </div>
                 </div>
                 <div class="row">
@@ -167,7 +170,7 @@
                 <div class='row'>
                     <button id="skip" onClick="skipWord()">Skip Word</button>
                     <button id="next" onClick="nextPlayer()">Next Player</button>
-                    <button id="start-stop" onClick="">Start/Stop</button>
+                    <button id="start-stop" onClick="startStop()">Start/Stop</button>
                 </div>
             </div>
         </div>

@@ -34,6 +34,38 @@ readline.createInterface({
     terminal: false
 }).on('line', (line) => {undercoverwords.push(line)})
 
+// Load easy words into an array
+let easywords = []
+filename = './server/catchphrase-easy.txt'
+readline.createInterface({
+  input: fs.createReadStream(filename),
+  terminal: false
+}).on('line', (line) => {easywords.push(line)})
+
+// Load medium words into an array
+let mediumwords = []
+filename = './server/catchphrase-medium.txt'
+readline.createInterface({
+  input: fs.createReadStream(filename),
+  terminal: false
+}).on('line', (line) => {mediumwords.push(line)})
+
+// Load hard words into an array
+let hardwords = []
+filename = './server/catchphrase-hard.txt'
+readline.createInterface({
+  input: fs.createReadStream(filename),
+  terminal: false
+}).on('line', (line) => {hardwords.push(line)})
+
+// Load really hard words into an array
+let reallyhardwords = []
+filename = './server/catchphrase-reallyhard.txt'
+readline.createInterface({
+  input: fs.createReadStream(filename),
+  terminal: false
+}).on('line', (line) => {reallyhardwords.push(line)})
+
 // Codenames Game
 class Game{
   constructor(){
@@ -57,6 +89,7 @@ class Game{
     this.over = false   // Whether or not the game has been won / lost
     this.winner = ''    // Winning team
     this.timer = this.timerAmount // Set the timer
+    this.timeRunning = false
 
     this.word = ''       // Init the board
     this.newWord()   // Populate the board
@@ -79,7 +112,6 @@ class Game{
 
   // Reset the timer and swap the turn over to the other team
   switchTurn(){
-    this.timer = this.timerAmount               // Reset timer
     if (this.turn === 'blue') this.turn = 'red' // Switch turn
     else this.turn = 'blue'
   }
@@ -93,6 +125,9 @@ class Game{
   // Get a new word from the list
   newWord(){
     let foundWord      // Temp var for a word out of the list
+    if (this.usedWords.length >= 1000) {
+      this.usedWords = []
+    }
 
     foundWord = this.words[Math.floor(Math.random() * this.words.length)] // Pick a random word from the pool
     // If the word is already on the board, pick another

@@ -1,1 +1,315 @@
-{"words":["con","destruction","food court","index","consent","nutmeg","descendant","brainstorm","chord","effect","tutor","statement","inning","apparatus","member","flotsam","property","addendum","water vapor","upgrade","periwinkle","sophomore","panic","standing ovation","hobby","pride","joke","retire","fowl","first mate","realm","hay wagon","coast","transpose","acre","Chick-fil-A","emperor","hearse","protestant","drift","cartoonist","population","snag","improve","cover","forklift","infection","voice","czar","offstage","VIP","ironic","cause","education","slump","jig","compromise","zip code","preteen","refund","decipher","gymnast","feeling","parley","wealth","deceive","mayhem","mooch","dud","fuel","gentleman","ice fishing","group","disgust","fun","exponential","duvet","community","ornithologist","system","history","comparison","crow's nest","debt","intern","pomp","default","sleet","pen pal","navigate","fragment","try","freshwater","swag","committee","philosopher","silt","overture","language","cutlass","telepathy","wasabi","bushel","doppelganger","blacksmith","galaxy","incisor","in-law","armada","ray","knowledge","doubloon","cashier","rhyme","opinion","schedule","dugout","password","convenience store","clue","temper","parody","lyrics","fake flowers","income tax","companion","mortal","sidekick","practice","tattle","interject","reaction","stun","mortified","haberdashery","fad","one-way street","stranger","loiterer","aftermath","stout","occupant","plot","guess","slam dunk","random","castaway","diversify","trademark","century","psychologist","altitude","grain","confidant","good-bye","feeder road","hypothermia","stockholder","condition","chaos","guru","exhibition","creator","shame","today","punishment","memory","figment","reimbursement","Everglades","tribe","wormhole","voicemail","carat","county fair","insurance","time zone","mine car","rival","riddle","detail","cranium","Zen","Atlantis","big bang theory","regret","soul","handful","pawnshop","interference","flutter","fun house","friction","emigrate","gondola","dispatch","writhe","employee","scalawag","risk","whiplash","steel drum","representative","scatter","quarantine","crew","organization","ma'am","income","villain","observatory","theory","form","promise","error","digestion","wish","siesta","reward","buccaneer","vision","tinting","eureka","aristocrat","inquisition","opaque","rhythm","fathom","danger","lichen","stowaway","brunette","pastry","cartography","depth","positive","vanquish","stagecoach","archaeologist","turret","implode","resourceful","blunt","inertia","neutron","hang ten","sickle","quiver","cramp","doubt","treatment","problem","channel","P.O. box","climate","tournament","destination","trawler","profit","twang","Ã¯Â»Â¿acoustics","pelt","junk drawer","cubit","champion","prepare","credit","gallop","remain","crisp","flight","bed and breakfast","wetlands","sapphire","discovery","paranoid","rest stop","landfill","confide","dictate","society","welder","infect","translate","doubtful","admire","zone defense","dryer sheet","name","soulmate","smidgen","demanding","irrational","enemy","gravel","semester","ligament","license","title","president","tug","copyright","steamboat","stuff","expired","cloudburst","blueprint","courthouse","rainwater","kilogram","texture","leap year","publisher","zero","layover"]}
+acoustics
+acre
+addendum
+admire
+aftermath
+altitude
+apparatus
+archaeologist
+aristocrat
+armada
+Atlantis
+bed and breakfast
+big bang theory
+blacksmith
+blueprint
+blunt
+brainstorm
+brunette
+buccaneer
+bushel
+carat
+cartography
+cartoonist
+cashier
+castaway
+cause
+century
+champion
+channel
+chaos
+Chick-fil-A
+chord
+climate
+cloudburst
+clue
+coast
+committee
+community
+companion
+comparison
+compromise
+condition
+confidant
+confide
+consent
+convenience store
+copyright
+county fair
+courthouse
+cover
+cramp
+cranium
+creator
+credit
+crew
+crisp
+crow's nest
+cubit
+cutlass
+czar
+danger
+debt
+deceive
+decipher
+default
+demanding
+depth
+descendant
+destination
+destruction
+detail
+dictate
+digestion
+discovery
+disgust
+dispatch
+diversify
+doppelganger
+doubloon
+doubt
+doubtful
+drift
+dryer sheet
+dud
+dugout
+duvet
+education
+effect
+emigrate
+emperor
+employee
+enemy
+error
+eureka
+Everglades
+exhibition
+expired
+exponential
+fad
+fake flowers
+fathom
+feeder road
+feeling
+figment
+first mate
+flight
+flotsam
+flutter
+food court
+forklift
+form
+fowl
+fragment
+freshwater
+friction
+fuel
+fun
+fun house
+galaxy
+gallop
+gentleman
+gondola
+good-bye
+grain
+gravel
+group
+guess
+guru
+gymnast
+haberdashery
+handful
+hang ten
+hay wagon
+hearse
+history
+hobby
+hypothermia
+ice fishing
+implode
+improve
+incisor
+income
+income tax
+index
+inertia
+infect
+infection
+in-law
+inning
+inquisition
+insurance
+interference
+interject
+intern
+ironic
+irrational
+jig
+joke
+junk drawer
+kilogram
+knowledge
+landfill
+language
+layover]
+leap year
+license
+lichen
+ligament
+loiterer
+lyrics
+ma'am
+mayhem
+member
+memory
+mine car
+mooch
+mortal
+mortified
+name
+navigate
+neutron
+nutmeg
+observatory
+occupant
+offstage
+one-way street
+opaque
+opinion
+organization
+ornithologist
+overture
+panic
+paranoid
+parley
+parody
+password
+pastry
+pawnshop
+pelt
+pen pal
+periwinkle
+philosopher
+plot
+P.O. box
+pomp
+population
+positive
+practice
+prepare
+president
+preteen
+pride
+problem
+profit
+promise
+property
+protestant
+psychologist
+publisher
+punishment
+quarantine
+quiver
+rainwater
+random
+ray
+reaction
+realm
+refund
+regret
+reimbursement
+remain
+representative
+resourceful
+rest stop
+retire
+reward
+rhyme
+rhythm
+riddle
+risk
+rival
+sapphire
+scalawag
+scatter
+schedule
+semester
+shame
+sickle
+sidekick
+siesta
+silt
+slam dunk
+sleet
+slump
+smidgen
+snag
+society
+sophomore
+soul
+soulmate
+stagecoach
+standing ovation
+statement
+steamboat
+steel drum
+stockholder
+stout
+stowaway
+stranger
+stuff
+stun
+swag
+system
+tattle
+telepathy
+temper
+texture
+theory
+time zone
+tinting
+title
+today
+tournament
+trademark
+translate
+transpose
+trawler
+treatment
+tribe
+try
+tug
+turret
+tutor
+twang
+upgrade
+vanquish
+villain
+VIP
+vision
+voice
+voicemail
+wasabi
+water vapor
+wealth
+welder
+wetlands
+whiplash
+wish
+wordscon
+wormhole
+writhe
+Zen
+zero
+zip code
+zone defense

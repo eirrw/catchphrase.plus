@@ -65,6 +65,11 @@ let SOCKET_LIST = {}
 let ROOM_LIST = {}
 let PLAYER_LIST = {}
 
+let ROLE_GUESSER = 'guesser';
+let ROLE_SPEAKER = 'speaker';
+let TEAM_BLUE = 'blue';
+let TEAM_RED = 'red';
+
 // Room class
 // Live rooms will have a name and password and keep track of game options / players in room
 class Room {
@@ -74,6 +79,7 @@ class Room {
     this.players = {}
     this.game = new Game()
     this.speaker = false
+    this.lastPlayers = []
 
     // Add room to room list
     ROOM_LIST[this.room] = this
@@ -105,7 +111,7 @@ class Player {
     this.room = room
     this.team = 'undecided'
     this.order = null
-    this.role = 'guesser'
+    this.role = ROLE_GUESSER
     this.timeout = 2100         // # of seconds until kicked for afk (35min)
     this.afktimer = this.timeout       
 
@@ -193,6 +199,8 @@ io.sockets.on('connection', function(socket){
   socket.on('skipWord', () => {skipWord(socket)})
 
   socket.on('nextPlayer', () => {nextPlayer(socket)})
+
+  socket.on('startStop', () => {startStop(socket)})
 
   // Active. Called whenever client interacts with the game, resets afk timer
   socket.on('*', () => {
@@ -386,8 +394,8 @@ function newGame(socket){
 
   // Make everyone in the room a guesser and tell their client the game is new
   for(let player in ROOM_LIST[room].players){
-    PLAYER_LIST[player].role = 'guesser';
-    SOCKET_LIST[player].emit('switchRole', {role:'guesser'})
+    PLAYER_LIST[player].role = ROLE_GUESSER;
+    SOCKET_LIST[player].emit('switchRole', {role: ROLE_GUESSER})
     SOCKET_LIST[player].emit('newGameResponse', {success:true})
   }
   gameUpdate(room) // Update everyone in the room
@@ -396,13 +404,13 @@ function newGame(socket){
 
 // Click tile function
 // Gets client and the tile they clicked and pushes that change to the rooms game
-function skipWord(socket, data){
+function skipWord(socket){
   if (!PLAYER_LIST[socket.id]) return // Prevent Crash
   let room = PLAYER_LIST[socket.id].room  // Get the room that the client called from
 
   if (PLAYER_LIST[socket.id].team === ROOM_LIST[room].game.turn){ // If it was this players turn
     if (!ROOM_LIST[room].game.over){  // If the game is not over
-      if (PLAYER_LIST[socket.id].role !== 'spymaster'){ // If the client isnt spymaster
+      if (PLAYER_LIST[socket.id].role !== ROLE_GUESSER) { // If the client isnt spymaster
         ROOM_LIST[room].game.newWord()
         gameUpdate(room)  // Update everyone in the room
       }
@@ -410,31 +418,65 @@ function skipWord(socket, data){
   }
 }
 
-function nextPlayer(socket, data) {
+function nextPlayer(socket) {
   if (!PLAYER_LIST[socket.id]) return // Prevent Crash
   let room = PLAYER_LIST[socket.id].room
 
   if (PLAYER_LIST[socket.id].team === ROOM_LIST[room].game.turn) {
     if (!ROOM_LIST[room].game.over) {
-      if (PLAYER_LIST[socket.id].role !== 'guesser') {
+      if (PLAYER_LIST[socket.id].role !== ROLE_GUESSER) {
         ROOM_LIST[room].game.newWord()
 
-        let nextTeam = 'blue'
-        if (PLAYER_LIST[socket.id].team === nextTeam) nextTeam = 'red'
+        let nextTeam = TEAM_BLUE
+        if (PLAYER_LIST[socket.id].team === nextTeam) nextTeam = TEAM_RED
 
         let players = getPlayers(room, nextTeam)
-        let next = players[PLAYER_LIST[socket.id] + 1]
-        if (next === undefined) next = players[0]
 
-        PLAYER_LIST[next].role = 'speaker'
+        let next = players[(ROOM_LIST[room].lastPlayers.shift() || 0) + 1]
+        if (next === undefined) next = players[0]
+        if (next === undefined) {
+          gameUpdate(room)
+          return
+        }
+
+        ROOM_LIST[room].lastPlayers.push(PLAYER_LIST[socket.id].order)
+
+        PLAYER_LIST[next].role = ROLE_SPEAKER
         switchRole(next)
 
-        PLAYER_LIST[socket.id].role = 'guesser'
+        PLAYER_LIST[socket.id].role = ROLE_GUESSER
         switchRole(socket.id)
+
+        ROOM_LIST[room].game.switchTurn()
 
         gameUpdate(room)
       }
     }
+  }
+}
+
+function startStop(socket) {
+  if (!PLAYER_LIST[socket.id]) return // Prevent Crash
+  let room = PLAYER_LIST[socket.id].room  // Get the room that the client called from
+
+  if (ROOM_LIST[room].game.timeRunning) {
+    ROOM_LIST[room].game.timeRunning = false
+    gameUpdate(room)
+  } else {
+    for (let player in ROOM_LIST[room].players) {
+      PLAYER_LIST[player].role = ROLE_GUESSER
+      switchRole(player)
+    }
+
+    PLAYER_LIST[socket.id].role = ROLE_SPEAKER
+    switchRole(socket.id)
+
+    ROOM_LIST[room].game.timer = ROOM_LIST[room].game.timerAmount
+    ROOM_LIST[room].game.turn = PLAYER_LIST[socket.id].team
+    ROOM_LIST[room].game.timeRunning = true
+    ROOM_LIST[room].game.newWord()
+
+    gameUpdate(room)
   }
 }
 
@@ -452,7 +494,7 @@ function getPlayers(room, team) {
 // Gets clients requested role and switches it
 function switchRole(player){
   if (!SOCKET_LIST[player]) return
-  SOCKET_LIST[player].emit('switchRole' , {role: player.role});
+  SOCKET_LIST[player].emit('switchRole' , {role: PLAYER_LIST[player].role});
   gameUpdate(PLAYER_LIST[player].room)                   // Update everyone in the room
 }
 
@@ -521,11 +563,11 @@ setInterval(()=>{
   }
   // Game Timer Logic
   for (let room in ROOM_LIST){
-    if (ROOM_LIST[room].mode === 'timed'){
+    if (ROOM_LIST[room].game.timeRunning){
       ROOM_LIST[room].game.timer--          // If the room is in timed mode, count timer down
 
       if (ROOM_LIST[room].game.timer < 0){  // If timer runs out, switch that rooms turn
-        ROOM_LIST[room].game.switchTurn()
+        ROOM_LIST[room].game.timeRunning = false
         gameUpdate(room)   // Update everyone in the room
       }
       

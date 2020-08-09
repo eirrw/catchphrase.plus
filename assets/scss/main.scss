@@ -461,7 +461,6 @@ body {
             #word-container {
               width: 60%;
               height: 60px;
-              color: $white;
               text-align: center;
 
               &.blue {
@@ -471,14 +470,15 @@ body {
               &.red {
                 background: $red;
               }
+            }
 
-              h2 {
-                display: block;
-                margin: auto;
-                line-height: 60px;
-                font-family: monospace;
-                text-transform: uppercase;
-              }
+            h2 {
+              display: block;
+              margin: auto;
+              line-height: 60px;
+              font-family: monospace;
+              text-transform: uppercase;
+              color: $white;
             }
 
             #previous-word {

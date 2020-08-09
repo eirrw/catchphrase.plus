@@ -59,7 +59,7 @@ let timer = document.getElementById('timer')
 // init
 ////////////////////////////////////////////////////////////////////////////
 // Default game settings
-let playerRole = 'speaker'
+let playerRole = 'guesser'
 let mode = 'casual'
 
 // UI Interaction with server
@@ -104,13 +104,17 @@ randomizeTeams.onclick = () => {
 newGame.onclick = () => {         
   socket.emit('newGame', {})
 }
-// User Clicks Tile
+
 function skipWord(){
   socket.emit('skipWord', {})
 }
 
 function nextPlayer() {
   socket.emit('nextPlayer', {})
+}
+
+function startStop() {
+  socket.emit('startStop', {})
 }
 
 // User Clicks About
@@ -217,7 +221,6 @@ socket.on('serverMessage', (data) => {    // Response to Server message
 })
 
 socket.on('switchRole', (data) =>{  // Response to Switching Role
-  debugger;
   playerRole = data.role;
   if (playerRole === 'guesser') {
     buttonSkipWord.disabled = true;
@@ -234,7 +237,7 @@ socket.on('gameState', (data) =>{           // Response to gamestate update
   updateInfo(data.game, data.team)      // Update the games turn information
   updateTimerSlider(data.game, data.mode)          // Update the games timer slider
   updatePacks(data.game)                // Update the games pack information
-  updateBoard(data.game.word, data.game.usedWords, data.team)          // Update the board display
+  updateBoard(data.game.word, data.game.usedWords, data.team, data.game.turn) // Update the board display
 })
 
 
@@ -253,7 +256,7 @@ function wipeBoard(){
 }
 
 // Update the game info displayed to the client
-function updateInfo(game, team){
+function updateInfo(game){
   scoreBlue.innerHTML = game.blue                         // Update the blue tiles left
   scoreRed.innerHTML = game.red                           // Update the red tiles left
   turnMessage.innerHTML = game.turn + "'s turn"           // Update the turn msg
@@ -262,7 +265,7 @@ function updateInfo(game, team){
     turnMessage.innerHTML = game.winner + " wins!"
     turnMessage.className = game.winner
   }
-  // debugger;
+  debugger;
   let disableButtons = playerRole !== 'speaker'
   buttonSkipWord.disabled = disableButtons
   buttonNextPlayer.disabled = disableButtons
@@ -297,7 +300,7 @@ function updatePacks(game){
 }
 
 // Update the board
-function updateBoard(word, usedWords, team){
+function updateBoard(word, usedWords, team, turn){
   let preWord = ''
   if (usedWords.length > 1) {
     preWord = usedWords[usedWords.length - 2]
@@ -306,15 +309,29 @@ function updateBoard(word, usedWords, team){
   document.getElementById('word').innerHTML = word
   document.getElementById('pre-word').innerHTML = preWord
 
-  let otherTeam = 'blue'
-  if (team === otherTeam) otherTeam = 'red'
+  let notTurn = 'blue'
+  if (turn === notTurn) notTurn = 'red'
 
   let wordContainer = document.getElementById('word-container')
-  wordContainer.classList.add(team)
-  wordContainer.classList.remove(otherTeam)
+  let otherTeamContainer = document.getElementById('other-team-guessing')
+  let yourTeamContainer = document.getElementById('your-team-guessing')
+  wordContainer.classList.add(turn)
+  wordContainer.classList.remove(notTurn)
 
-  if (playerRole === 'speaker') wordContainer.classList.remove('hidden')
-  else wordContainer.classList.add('hidden')
+  if (playerRole === 'speaker') {
+    wordContainer.classList.remove('hidden')
+    yourTeamContainer.classList.add('hidden')
+    otherTeamContainer.classList.add('hidden')
+  } else {
+    wordContainer.classList.add('hidden')
+    if (team === turn) {
+      yourTeamContainer.classList.remove('hidden')
+      otherTeamContainer.classList.add('hidden')
+    } else {
+      yourTeamContainer.classList.add('hidden')
+      otherTeamContainer.classList.remove('hidden')
+    }
+  }
 }
 
 // Update the player list
