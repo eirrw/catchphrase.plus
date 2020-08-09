@@ -477,84 +477,36 @@ body {
                 margin: auto;
                 line-height: 60px;
                 font-family: monospace;
+                text-transform: uppercase;
+              }
+            }
+
+            #previous-word {
+              color: $grey;
+
+              #pre-word {
+                text-transform: uppercase;
               }
             }
 
             button {
               width: 20%;
-            }
-          }
-        }
-
-        #toggles {
-          position: relative;
-          font-size: 0;
-          width: 100%;
-          margin-top: 20px;
-
-          .toggle {
-            position: relative;
-            width: 19%;
-            float: left;
-            margin: 0.5%;
-
-            button {
-              width: 50%;
-              margin: 0;
-              background: $darkgrey;
-              border-color: $darkgrey;
-              color: $black;
-              text-decoration: none;
-
-              &.toggle-right {
-                border-left-width: 0;
-                border-bottom-left-radius: 0;
-                border-top-left-radius: 0;
-              }
-
-              &.toggle-left {
-                border-right-width: 0;
-                border-bottom-right-radius: 0;
-                border-top-right-radius: 0;
-              }
 
               &:hover {
-                background: $grey;
+                background: $darkgrey;
               }
 
               &:disabled {
-                background: $black;
+                color: $darkgrey;
                 border-color: $darkgrey;
-                color: $white;
                 cursor: default;
-                text-decoration: underline;
 
                 &:hover {
                   background: $black;
-                  color: $white;
                 }
               }
             }
           }
-
-          #new-game {
-            position: relative;
-            width: 19%;
-            right: 0;
-            float: right;
-            margin: 0.5%;
-            font-size: 16px;
-            background: #323032;
-            border: 2px solid #F8FDFF;
-            color: #F8FDFF;
-            text-decoration: none;
-
-            &:hover {
-              background: $darkgrey;
-            }
-          }
-
-
         }
       }
     }

@@ -20,10 +20,10 @@
 </head>
 
 <body>
-<!--  <p id='donate'>-->
-<!--    <a id="donate-link" target='_blank' href="https://paypal.me/JoeMarchesi">Donate to help with hosting</a> -->
-<!--    <a id='donate-hide'>[hide]</a>-->
-<!--  </p>-->
+  <p id='donate'>
+    <a id="donate-link" target='_blank' href="https://paypal.me/JoeMarchesi">Donate to help with hosting</a>
+    <a id='donate-hide'>[hide]</a>
+  </p>
 <span id='server-stats' style='display: none'></span>
 <div id='about-window' class='above hidden'>
     <div>
@@ -152,31 +152,24 @@
             </div>
             <div id="board">
                 <div class="row">
-                    <div id='word-container' class="blue">
+                    <div id='word-container' class="hidden">
                         <h2 id="word">TEST WORD</h2>
+                    </div>
+                    <div id="word-other-team-guessing">
+
+                    </div>
+                </div>
+                <div class="row">
+                    <div id="previous-word">
+                        Previous: <span id="pre-word"></span>
                     </div>
                 </div>
                 <div class='row'>
-                    <button id="skip" onClick="">Skip</button>
-                    <button id="next" onClick="">Next Player</button>
+                    <button id="skip" onClick="skipWord()">Skip Word</button>
+                    <button id="next" onClick="nextPlayer()">Next Player</button>
                     <button id="start-stop" onClick="">Start/Stop</button>
                 </div>
             </div>
-<!--            <div id="toggles">-->
-<!--                <div class='toggle'>-->
-<!--                    <button id='role-guesser' class="toggle-left" disabled>Guesser</button>-->
-<!--                    <button id='role-spymaster' class="toggle-right">Spymaster</button>-->
-<!--                </div>-->
-<!--                <div class='toggle hidden' id='player-difficulty'>-->
-<!--                    <button id='difficulty-normal' class="toggle-left" disabled>Normal</button>-->
-<!--                    <button id='difficulty-hard' class="toggle-right">Hard</button>-->
-<!--                </div>-->
-<!--                <div class='toggle'>-->
-<!--                    <button id="mode-casual" class="toggle-left" disabled>Casual</button>-->
-<!--                    <button id="mode-timed" class="toggle-right">Timed</button>-->
-<!--                </div>-->
-<!--                <button id='new-game'>New Game</button>-->
-<!--            </div>-->
         </div>
         <div id="space"></div>
     </div>

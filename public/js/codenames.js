@@ -32,13 +32,9 @@ let joinBlue = document.getElementById('join-blue')
 let randomizeTeams = document.getElementById('randomize-teams')
 // let endTurn = document.getElementById('end-turn')
 let newGame = document.getElementById('new-game')
-let buttonRoleGuesser = document.getElementById('role-guesser')
-let buttonRoleSpymaster = document.getElementById('role-spymaster')
-let toggleDifficulty = document.getElementById('player-difficulty')
-let buttonDifficultyNormal = document.getElementById('difficulty-normal')
-let buttonDifficultyHard = document.getElementById('difficulty-hard')
-let buttonModeCasual = document.getElementById('mode-casual')
-let buttonModeTimed = document.getElementById('mode-timed')
+let buttonSkipWord = document.getElementById('skip')
+let buttonNextPlayer = document.getElementById('next')
+let buttonStartStop = document.getElementById('start-stop')
 let buttonAbout = document.getElementById('about-button')
 let buttonAfk = document.getElementById('not-afk')
 let buttonServerMessageOkay = document.getElementById('server-message-okay')
@@ -63,16 +59,8 @@ let timer = document.getElementById('timer')
 // init
 ////////////////////////////////////////////////////////////////////////////
 // Default game settings
-let playerRole = 'guesser'
-let difficulty = 'normal'
+let playerRole = 'speaker'
 let mode = 'casual'
-
-// Show the proper toggle options
-// buttonModeCasual.disabled = true;
-// buttonModeTimed.disabled = false;
-// buttonRoleGuesser.disabled = true;
-// buttonRoleSpymaster.disabled = false;
-
 
 // UI Interaction with server
 ////////////////////////////////////////////////////////////////////////////
@@ -117,9 +105,14 @@ newGame.onclick = () => {
   socket.emit('newGame', {})
 }
 // User Clicks Tile
-function tileClicked(i,j){
-  socket.emit('clickTile', {i:i, j:j})
+function skipWord(){
+  socket.emit('skipWord', {})
 }
+
+function nextPlayer() {
+  socket.emit('nextPlayer', {})
+}
+
 // User Clicks About
 buttonAbout.onclick = () => {
   if (aboutWindow.classList.contains('hidden')) {
@@ -154,7 +147,7 @@ timerSlider.addEventListener("input", () =>{
   socket.emit('timerSlider', {value:timerSlider.value})
 })
 
-// User confirms theyre not afk
+// User confirms they're not afk
 buttonAfk.onclick = () => {
   socket.emit('active')
   afkWindow.classList.add('hidden')
@@ -193,7 +186,6 @@ socket.on('leaveResponse', (data) =>{       // Response to leaving room
   if(data.success){
     joinDiv.style.display = 'block'
     gameDiv.style.display = 'none'
-    wipeBoard();
   }
 })
 
@@ -203,7 +195,6 @@ socket.on('timerUpdate', (data) => {        // Server update client timer
 
 socket.on('newGameResponse', (data) => {    // Response to New Game
   if (data.success){
-    wipeBoard();
   }
 })
 
@@ -225,33 +216,25 @@ socket.on('serverMessage', (data) => {    // Response to Server message
   overlay.classList.remove('hidden')
 })
 
-socket.on('switchRoleResponse', (data) =>{  // Response to Switching Role
-  if(data.success){
-    playerRole = data.role;
-    if (playerRole === 'guesser') {
-      buttonRoleGuesser.disabled = true;
-      buttonRoleSpymaster.disabled = false;
-      toggleDifficulty.classList.add('hidden')
-    } else {
-      buttonRoleGuesser.disabled = false;
-      buttonRoleSpymaster.disabled = true;
-      toggleDifficulty.classList.remove('hidden')
-    }
-    wipeBoard();
+socket.on('switchRole', (data) =>{  // Response to Switching Role
+  debugger;
+  playerRole = data.role;
+  if (playerRole === 'guesser') {
+    buttonSkipWord.disabled = true;
+    buttonNextPlayer.disabled = true;
+  } else {
+    buttonSkipWord.disabled = false;
+    buttonNextPlayer.disabled = false;
   }
 })
 
 socket.on('gameState', (data) =>{           // Response to gamestate update
-  if (data.difficulty !== difficulty){  // Update the clients difficulty
-    difficulty = data.difficulty
-    wipeBoard();                        // Update the appearance of the tiles
-  }
-  mode = data.mode                      // Update the clients game mode
+  console.log(data)
+  updatePlayerlist(data.players)        // Update the player list for the room
   updateInfo(data.game, data.team)      // Update the games turn information
   updateTimerSlider(data.game, data.mode)          // Update the games timer slider
   updatePacks(data.game)                // Update the games pack information
-  updatePlayerlist(data.players)        // Update the player list for the room
-  updateBoard(data.game.board)          // Update the board display
+  updateBoard(data.game.word, data.game.usedWords, data.team)          // Update the board display
 })
 
 
@@ -279,15 +262,15 @@ function updateInfo(game, team){
     turnMessage.innerHTML = game.winner + " wins!"
     turnMessage.className = game.winner
   }
-  // if (team !== game.turn) endTurn.disabled = true         // Disable end turn button for opposite team
-  // else endTurn.disabled = false
-  // if (playerRole === 'spymaster') endTurn.disabled = true // Disable end turn button for spymasters
+  // debugger;
+  let disableButtons = playerRole !== 'speaker'
+  buttonSkipWord.disabled = disableButtons
+  buttonNextPlayer.disabled = disableButtons
 }
 
 // Update the clients timer slider
 function updateTimerSlider(game, mode){
-  let minutes = (game.timerAmount - 1) / 60
-  timerSlider.value = minutes
+  timerSlider.value = (game.timerAmount - 1) / 60
   timerSliderLabel.innerHTML = "Timer Length : " + timerSlider.value + "min"
 
   // If the mode is not timed, dont show the slider
@@ -314,22 +297,24 @@ function updatePacks(game){
 }
 
 // Update the board
-function updateBoard(board){
-  // Add description classes to each tile depending on the tiles color
-  for (let x = 0; x < 5; x++){
-    let row = document.getElementById('row-' + (x+1))
-    for (let y = 0; y < 5; y++){
-      let button = row.children[y]
-      button.innerHTML = board[x][y].word
-      if (board[x][y].type === 'red') button.className += " r"    // Red tile
-      if (board[x][y].type === 'blue') button.className += " b"   // Blue tile
-      if (board[x][y].type === 'neutral') button.className += " n"// Neutral tile
-      if (board[x][y].type === 'death') button.className += " d"  // Death tile
-      if (board[x][y].flipped) button.className += " flipped"     // Flipped tile
-      if (playerRole === 'spymaster') button.className += " s"    // Flag all tiles if the client is a spy master
-      if (difficulty === 'hard') button.className += " h"         // Flag all tiles if game is in hard mode
-    }
+function updateBoard(word, usedWords, team){
+  let preWord = ''
+  if (usedWords.length > 1) {
+    preWord = usedWords[usedWords.length - 2]
   }
+
+  document.getElementById('word').innerHTML = word
+  document.getElementById('pre-word').innerHTML = preWord
+
+  let otherTeam = 'blue'
+  if (team === otherTeam) otherTeam = 'red'
+
+  let wordContainer = document.getElementById('word-container')
+  wordContainer.classList.add(team)
+  wordContainer.classList.remove(otherTeam)
+
+  if (playerRole === 'speaker') wordContainer.classList.remove('hidden')
+  else wordContainer.classList.add('hidden')
 }
 
 // Update the player list
@@ -337,6 +322,7 @@ function updatePlayerlist(players){
   undefinedList.innerHTML = ''
   redTeam.innerHTML = ''
   blueTeam.innerHTML = ''
+
   for (let i in players){
     // Create a li element for each player
     let li = document.createElement('li');

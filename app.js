@@ -31,15 +31,19 @@ app.use((req, res, next) => {
 app.use(express.static('public'))
 
 // Websocket
-let io = require('socket.io')(server)
+let io = require('socket.io')(server, {
+  // TODO: remove thses timeouts
+  pingInterval: 10000,
+  pingTimeout: 300000,
+})
 
 // Catch wildcard socket events
 var middleware = require('socketio-wildcard')()
 io.use(middleware)
 
 // Make API requests
-const Heroku = require('heroku-client')
-const heroku = new Heroku({ token:process.env.API_TOKEN})// DELETE requests
+// const Heroku = require('heroku-client')
+// const heroku = new Heroku({ token:process.env.API_TOKEN})// DELETE requests
 
 // Daily Server Restart time
 // UTC 13:00:00 = 9AM EST
@@ -69,8 +73,7 @@ class Room {
     this.password = '' + pass
     this.players = {}
     this.game = new Game()
-    this.difficulty = 'normal'
-    this.mode = 'casual'
+    this.speaker = false
 
     // Add room to room list
     ROOM_LIST[this.room] = this
@@ -101,6 +104,7 @@ class Player {
     this.nickname = tempName
     this.room = room
     this.team = 'undecided'
+    this.order = null
     this.role = 'guesser'
     this.timeout = 2100         // # of seconds until kicked for afk (35min)
     this.afktimer = this.timeout       
@@ -111,9 +115,17 @@ class Player {
 
   // When a player joins a room, evenly distribute them to a team
   joinTeam(){
-    let numInRoom = Object.keys(ROOM_LIST[this.room].players).length
+    let room = ROOM_LIST[this.room]
+    let numInRoom = Object.keys(room.players).length
+
     if (numInRoom % 2 === 0) this.team = 'blue'
     else this.team = 'red'
+    this.order = Math.floor((numInRoom - 1) / 2)
+
+    if (!room.speaker && room.game.turn === this.team) {
+      this.role = 'speaker'
+      room.speaker = true
+    }
   }
 }
 
@@ -156,7 +168,7 @@ io.sockets.on('connection', function(socket){
   // Join Team. Called when client joins a team (red / blue)
   // Data: team color
   socket.on('joinTeam', (data) => {
-    if (!PLAYER_LIST[socket.id]) return // Prevent Crash
+    if (!PLAYER_LIST[socket.id]) return   // Prevent Crash
     let player = PLAYER_LIST[socket.id];  // Get player who made request
     player.team = data.team               // Update their team
     gameUpdate(player.room)               // Update the game for everyone in their room
@@ -168,29 +180,6 @@ io.sockets.on('connection', function(socket){
   // New Game. Called when client starts a new game
   socket.on('newGame', () =>{newGame(socket)})
 
-  // Switch Role. Called when client switches to spymaster / guesser
-  // Data: New role
-  socket.on('switchRole', (data) => {switchRole(socket, data)})
-
-  // Switch Difficulty. Called when spymaster switches to hard / normal
-  // Data: New difficulty
-  socket.on('switchDifficulty', (data) => {
-    if (!PLAYER_LIST[socket.id]) return // Prevent Crash
-    let room = PLAYER_LIST[socket.id].room        // Get room the client was in
-    ROOM_LIST[room].difficulty = data.difficulty  // Update the rooms difficulty
-    gameUpdate(room)                              // Update the game for everyone in this room
-  })
-
-  // Switch Mode. Called when client switches to casual / timed
-  // Data: New mode
-  socket.on('switchMode', (data) => {
-    if (!PLAYER_LIST[socket.id]) return // Prevent Crash
-    let room = PLAYER_LIST[socket.id].room  // Get the room the client was in
-    ROOM_LIST[room].mode = data.mode;       // Update the rooms game mode
-    ROOM_LIST[room].game.timer = ROOM_LIST[room].game.timerAmount;   // Reset the timer in the room's game
-    gameUpdate(room)                        // Update the game for everyone in this room
-  })
-
   // End Turn. Called when client ends teams turn
   socket.on('endTurn', () => {
     if (!PLAYER_LIST[socket.id]) return // Prevent Crash
@@ -201,7 +190,9 @@ io.sockets.on('connection', function(socket){
 
   // Click Tile. Called when client clicks a tile
   // Data: x and y location of tile in grid
-  socket.on('clickTile', (data) => {clickTile(socket, data)})
+  socket.on('skipWord', () => {skipWord(socket)})
+
+  socket.on('nextPlayer', () => {nextPlayer(socket)})
 
   // Active. Called whenever client interacts with the game, resets afk timer
   socket.on('*', () => {
@@ -352,6 +343,7 @@ function socketDisconnect(socket){
   logStats('DISCONNECT: ' + socket.id)
 }
 
+
 // Randomize Teams function
 // Will mix up the teams in the room that the client is in
 function randomizeTeams(socket){
@@ -380,6 +372,7 @@ function randomizeTeams(socket){
       player.team = 'blue'
       color = 0
     }
+    player.order = Math.floor(i / 2)
   }
   gameUpdate(room) // Update everyone in the room
 }
@@ -394,42 +387,73 @@ function newGame(socket){
   // Make everyone in the room a guesser and tell their client the game is new
   for(let player in ROOM_LIST[room].players){
     PLAYER_LIST[player].role = 'guesser';
-    SOCKET_LIST[player].emit('switchRoleResponse', {success:true, role:'guesser'})
+    SOCKET_LIST[player].emit('switchRole', {role:'guesser'})
     SOCKET_LIST[player].emit('newGameResponse', {success:true})
   }
   gameUpdate(room) // Update everyone in the room
 }
 
-// Switch role function
-// Gets clients requested role and switches it
-function switchRole(socket, data){
-  if (!PLAYER_LIST[socket.id]) return // Prevent Crash
-  let room = PLAYER_LIST[socket.id].room // Get the room that the client called from
-
-  if (PLAYER_LIST[socket.id].team === 'undecided'){
-    // Dissallow the client a role switch if they're not on a team
-    socket.emit('switchRoleResponse', {success:false})
-  } else {
-    PLAYER_LIST[socket.id].role = data.role;                          // Set the new role
-    socket.emit('switchRoleResponse', {success:true, role:data.role}) // Alert client
-    gameUpdate(room)                                              // Update everyone in the room
-  }
-}
 
 // Click tile function
 // Gets client and the tile they clicked and pushes that change to the rooms game
-function clickTile(socket, data){
+function skipWord(socket, data){
   if (!PLAYER_LIST[socket.id]) return // Prevent Crash
   let room = PLAYER_LIST[socket.id].room  // Get the room that the client called from
 
   if (PLAYER_LIST[socket.id].team === ROOM_LIST[room].game.turn){ // If it was this players turn
     if (!ROOM_LIST[room].game.over){  // If the game is not over
       if (PLAYER_LIST[socket.id].role !== 'spymaster'){ // If the client isnt spymaster
-        ROOM_LIST[room].game.flipTile(data.i, data.j) // Send the flipped tile info to the game
+        ROOM_LIST[room].game.newWord()
         gameUpdate(room)  // Update everyone in the room
       }
     }
   }
+}
+
+function nextPlayer(socket, data) {
+  if (!PLAYER_LIST[socket.id]) return // Prevent Crash
+  let room = PLAYER_LIST[socket.id].room
+
+  if (PLAYER_LIST[socket.id].team === ROOM_LIST[room].game.turn) {
+    if (!ROOM_LIST[room].game.over) {
+      if (PLAYER_LIST[socket.id].role !== 'guesser') {
+        ROOM_LIST[room].game.newWord()
+
+        let nextTeam = 'blue'
+        if (PLAYER_LIST[socket.id].team === nextTeam) nextTeam = 'red'
+
+        let players = getPlayers(room, nextTeam)
+        let next = players[PLAYER_LIST[socket.id] + 1]
+        if (next === undefined) next = players[0]
+
+        PLAYER_LIST[next].role = 'speaker'
+        switchRole(next)
+
+        PLAYER_LIST[socket.id].role = 'guesser'
+        switchRole(socket.id)
+
+        gameUpdate(room)
+      }
+    }
+  }
+}
+
+// Get a list of players on a team
+function getPlayers(room, team) {
+  let teamPlayers = []
+
+  for (let player in ROOM_LIST[room].players) {
+    if (PLAYER_LIST[player].team === team) teamPlayers[PLAYER_LIST[player].order] = PLAYER_LIST[player].id
+  }
+  return teamPlayers
+}
+
+// Switch role function
+// Gets clients requested role and switches it
+function switchRole(player){
+  if (!SOCKET_LIST[player]) return
+  SOCKET_LIST[player].emit('switchRole' , {role: player.role});
+  gameUpdate(PLAYER_LIST[player].room)                   // Update everyone in the room
 }
 
 // Update the gamestate for every client in the room that is passed to this function
@@ -461,7 +485,7 @@ function herokuRestart(){
     SOCKET_LIST[socket].emit('serverMessage', {msg:"Server Successfully Restarted for Maintnence"})
     SOCKET_LIST[socket].emit('leaveResponse', {success:true})
   }
-  heroku.delete('/apps/codenames-plus/dynos/').then(app => {})
+  // heroku.delete('/apps/codenames-plus/dynos/').then(app => {})
 }
 
 // Warn users of restart
