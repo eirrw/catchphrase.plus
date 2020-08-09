@@ -11,14 +11,13 @@ help:
 	echo 'down'
 	echo 'restart'
 
-
 npm-install:
 	npm ci
 
-build-dev: npm-install
+build-dev:
 	$(SASS) assets/scss -o public/css
 
-build-prod: npm-install
+build-prod:
 	$(SASS) --output-style compressed assets/scss -o public/css
 
 up-dev:

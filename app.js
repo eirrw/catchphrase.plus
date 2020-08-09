@@ -30,8 +30,9 @@ app.use((req, res, next) => {
 // Files for client
 app.use(express.static('public'))
 
+// change timeout settings for development
 serverSettings = {}
-if (console.env.NODE_ENV === 'development')
+if (process.env.NODE_ENV === 'development')
   serverSettings = {
     pingInterval: 10000,
     pingTimeout: 300000
@@ -43,10 +44,6 @@ let io = require('socket.io')(server, serverSettings)
 // Catch wildcard socket events
 var middleware = require('socketio-wildcard')()
 io.use(middleware)
-
-// Make API requests
-// const Heroku = require('heroku-client')
-// const heroku = new Heroku({ token:process.env.API_TOKEN})// DELETE requests
 
 // Daily Server Restart time
 // UTC 13:00:00 = 9AM EST
@@ -81,7 +78,6 @@ class Room {
     this.password = '' + pass
     this.players = {}
     this.game = new Game()
-    this.speaker = false
     this.lastPlayers = []
 
     // Add room to room list
@@ -127,14 +123,9 @@ class Player {
     let room = ROOM_LIST[this.room]
     let numInRoom = Object.keys(room.players).length
 
-    if (numInRoom % 2 === 0) this.team = 'blue'
-    else this.team = 'red'
+    if (numInRoom % 2 === 0) this.team = TEAM_BLUE
+    else this.team = TEAM_RED
     this.order = Math.floor((numInRoom - 1) / 2)
-
-    if (!room.speaker && room.game.turn === this.team) {
-      this.role = 'speaker'
-      room.speaker = true
-    }
   }
 }
 
@@ -528,18 +519,19 @@ function logStats(addition){
   console.log(stats + addition)
 }
 
-// Restart Heroku Server
-function herokuRestart(){
+// Restart Server
+function serverRestart(){
   // Let each socket know the server restarted and boot them to lobby
   for (let socket in SOCKET_LIST){
     SOCKET_LIST[socket].emit('serverMessage', {msg:"Server Successfully Restarted for Maintnence"})
     SOCKET_LIST[socket].emit('leaveResponse', {success:true})
   }
-  // heroku.delete('/apps/codenames-plus/dynos/').then(app => {})
+  console.log('Server going down for restart')
+  process.exit(0)
 }
 
 // Warn users of restart
-function herokuRestartWarning(){
+function serverRestartWarning(){
   for (let player in PLAYER_LIST){
     SOCKET_LIST[player].emit('serverMessage', {msg:"Scheduled Server Restart in 10 Minutes"})
   }
@@ -552,11 +544,11 @@ setInterval(()=>{
   // Warn clients of restart 10min in advance
   if (time.getHours() === restartWarningHour &&
       time.getMinutes() === restartWarningMinute &&
-      time.getSeconds() < restartWarningSecond) herokuRestartWarning()
+      time.getSeconds() < restartWarningSecond) serverRestartWarning()
   // Restart server at specified time
   if (time.getHours() === restartHour &&
       time.getMinutes() === restartMinute &&
-      time.getSeconds() < restartSecond) herokuRestart()
+      time.getSeconds() < restartSecond) serverRestart()
   
   // AFK Logic
   for (let player in PLAYER_LIST){
