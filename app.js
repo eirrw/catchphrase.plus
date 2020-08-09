@@ -14,7 +14,7 @@ let server = app.listen(process.env.PORT || 2000, listen);
 function listen(){
   let host = server.address().address;
   let port = server.address().port;
-  console.log('Codenames Server Started at http://' + host + ':' + port);
+  console.log('Catchphrase Server Started at http://' + host + ':' + port);
 }
 
 // Files for client
@@ -47,7 +47,7 @@ let restartWarningSecond = 2
 
 ////////////////////////////////////////////////////////////////////////////
 
-// Codenames Game
+// Catchphrase Game
 const Game = require('./server/game.js')
 
 // Objects to keep track of sockets, rooms and players

@@ -68,18 +68,29 @@ body {
       margin-top: 0;
     }
 
-    h2, h3 {
+    h2 {
+      text-align: center;
+      margin-bottom: 0;
+    }
+
+    h3 {
       text-align: center;
     }
 
-    a {
-      position: relative;
-      list-style: square !important;
-      padding: 0 50px 50px;
+    h4 {
+      text-align: center;
       margin-top: 0;
+    }
 
-      &:hover {
-        color: $blue;
+    div.links {
+      text-align: center;
+      a {
+        position: relative;
+        padding: 0 50px 50px;
+
+        &:hover {
+          color: $blue;
+        }
       }
     }
   }
@@ -222,7 +233,6 @@ body {
       left: 50%;
       transform: translate(-50%);
       display: flex;
-
 
       @media (max-width: $bp-medium) {
         width: 900px;
