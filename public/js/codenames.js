@@ -104,18 +104,22 @@ newGame.onclick = () => {
   socket.emit('newGame', {})
 }
 
+// skip the current word
 function skipWord(){
   socket.emit('skipWord', {})
 }
 
+// pass to the next player
 function nextPlayer() {
   socket.emit('nextPlayer', {})
 }
 
+// start or stop the round/timer
 function startStop() {
   socket.emit('startStop', {})
 }
 
+// update the score for the opposite team
 function updateScore(score) {
   socket.emit('updateScore', {score: score})
 }
@@ -240,7 +244,6 @@ socket.on('gameState', (data) =>{           // Response to gamestate update
   updatePacks(data.game)                // Update the games pack information
   updateBoard(data.game.word, data.game.usedWords, data.team, data.game.turn) // Update the board display
   updatePlayerlist(data.players)        // Update the player list for the room
-  updateRound(data.game.roundOver, data.game.turn)
 })
 
 // Utility Functions
@@ -354,18 +357,4 @@ function updatePlayerlist(players){
   }
 }
 
-// Update when a round starts or ends
-function updateRound(roundOver, turn) {
-  if (roundOver && playerRole === 'speaker') {
-
-  } else {
-
-  }
-}
-
 // Client Side UI Elements
-
-// Hide donate banner
-document.getElementById('donate-hide').onclick = () => { 
-  document.getElementById('donate').className = 'hide'
-}

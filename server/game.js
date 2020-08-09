@@ -69,7 +69,7 @@ readline.createInterface({
 // Codenames Game
 class Game{
   constructor(){
-    this.timerAmount = 2 // Default timer value
+    this.timerAmount = 61 // Default timer value
     this.winScore = 7 // default win score
 
     this.words = basewords  // Load default word pack
@@ -85,17 +85,17 @@ class Game{
   init(){
     this.randomTurn()   // When game is created, select red or blue to start, randomly
     this.over = false   // Whether or not the game has been won / lost
-    this.roundOver = false
+    this.roundOver = false // Whether or not the round is over
     this.winner = ''    // Winning team
     this.timer = this.timerAmount // Set the timer
-    this.timeRunning = false
-    this.red = this.blue = 0;
+    this.timeRunning = false // if the timer should be running
+    this.red = this.blue = 0; // initial score
 
     this.word = ''       // Init the board
-    this.newWord()   // Populate the board
+    this.newWord()   // get a new word
   }
 
-  // Check the number of unflipped team tiles and determine if someone won
+  // Check the current score and determine if someone won
   checkWin(){
     // Check team winner
     if (this.red >= this.winScore) {
@@ -108,7 +108,7 @@ class Game{
     }
   }
 
-  // Reset the timer and swap the turn over to the other team
+  // swap the turn over to the other team
   switchTurn(){
     if (this.turn === 'blue') this.turn = 'red' // Switch turn
     else this.turn = 'blue'
@@ -128,14 +128,15 @@ class Game{
     }
 
     foundWord = this.words[Math.floor(Math.random() * this.words.length)] // Pick a random word from the pool
-    // If the word is already on the board, pick another
+    // If the word has been used in the room already, pick another
     while (this.usedWords.includes(foundWord)){
       foundWord = this.words[Math.floor(Math.random() * this.words.length)]
     }
     this.usedWords.push(foundWord) // Add the word to the used list
-    this.word = foundWord       // Add the tile object to the board
+    this.word = foundWord       // set the current word
   }
 
+  // update the list of available words
   updateWordPool(){
     let pool = []
     if (this.base) pool = pool.concat(basewords)

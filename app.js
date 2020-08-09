@@ -17,16 +17,6 @@ function listen(){
   console.log('Codenames Server Started at http://' + host + ':' + port);
 }
 
-// Force SSL
-/*
-app.use((req, res, next) => {
-  if (req.header('x-forwarded-proto') !== 'https') {
-    res.redirect(`https://${req.header('host')}${req.url}`)
-  } else {
-    next();
-  }
-});
-*/
 // Files for client
 app.use(express.static('public'))
 
@@ -65,6 +55,7 @@ let SOCKET_LIST = {}
 let ROOM_LIST = {}
 let PLAYER_LIST = {}
 
+// string constant
 let ROLE_GUESSER = 'guesser';
 let ROLE_SPEAKER = 'speaker';
 let TEAM_BLUE = 'blue';
@@ -391,13 +382,14 @@ function newGame(socket){
   gameUpdate(room) // Update everyone in the room
 }
 
+// skips the current word
 function skipWord(socket){
   if (!PLAYER_LIST[socket.id]) return // Prevent Crash
   let room = PLAYER_LIST[socket.id].room  // Get the room that the client called from
 
   if (PLAYER_LIST[socket.id].team === ROOM_LIST[room].game.turn){ // If it was this players turn
     if (!ROOM_LIST[room].game.over){  // If the game is not over
-      if (PLAYER_LIST[socket.id].role !== ROLE_GUESSER) { // If the client isnt spymaster
+      if (PLAYER_LIST[socket.id].role !== ROLE_GUESSER) { // If the client isnt a guesser
         ROOM_LIST[room].game.newWord()
         gameUpdate(room)  // Update everyone in the room
       }
@@ -405,6 +397,7 @@ function skipWord(socket){
   }
 }
 
+// pass to the next player
 function nextPlayer(socket) {
   if (!PLAYER_LIST[socket.id]) return // Prevent Crash
   let room = PLAYER_LIST[socket.id].room
@@ -442,6 +435,7 @@ function nextPlayer(socket) {
   }
 }
 
+// start or stop the round
 function startStop(socket) {
   if (!PLAYER_LIST[socket.id]) return // Prevent Crash
   let room = PLAYER_LIST[socket.id].room  // Get the room that the client called from
@@ -467,6 +461,7 @@ function startStop(socket) {
   }
 }
 
+// update the score
 function updateScore(socket, data) {
   if (!PLAYER_LIST[socket.id]) return
   let room = PLAYER_LIST[socket.id].room
@@ -491,7 +486,6 @@ function getPlayers(room, team) {
 }
 
 // Switch role function
-// Gets clients requested role and switches it
 function switchRole(player){
   if (!SOCKET_LIST[player]) return
   SOCKET_LIST[player].emit('switchRole' , {role: PLAYER_LIST[player].role});
