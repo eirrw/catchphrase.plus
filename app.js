@@ -32,9 +32,9 @@ app.use(express.static('public'))
 
 // Websocket
 let io = require('socket.io')(server, {
-  // TODO: remove thses timeouts
-  pingInterval: 10000,
-  pingTimeout: 300000,
+  // uncomment timeouts for easier debugging
+  // pingInterval: 10000,
+  // pingTimeout: 300000,
 })
 
 // Catch wildcard socket events

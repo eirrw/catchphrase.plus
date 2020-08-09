@@ -235,7 +235,6 @@ socket.on('switchRole', (data) =>{  // Response to Switching Role
 })
 
 socket.on('gameState', (data) =>{           // Response to gamestate update
-  console.log(data)
   updateInfo(data.game, data.team)      // Update the games turn information
   updateTimerSlider(data.game)          // Update the games timer slider
   updatePacks(data.game)                // Update the games pack information
