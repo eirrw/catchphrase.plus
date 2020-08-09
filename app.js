@@ -30,12 +30,15 @@ app.use((req, res, next) => {
 // Files for client
 app.use(express.static('public'))
 
+serverSettings = {}
+if (console.env.NODE_ENV === 'development')
+  serverSettings = {
+    pingInterval: 10000,
+    pingTimeout: 300000
+  }
+
 // Websocket
-let io = require('socket.io')(server, {
-  // uncomment timeouts for easier debugging
-  // pingInterval: 10000,
-  // pingTimeout: 300000,
-})
+let io = require('socket.io')(server, serverSettings)
 
 // Catch wildcard socket events
 var middleware = require('socketio-wildcard')()
