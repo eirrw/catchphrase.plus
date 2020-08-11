@@ -69,7 +69,7 @@ readline.createInterface({
 // Codenames Game
 class Game{
   constructor(){
-    this.timerAmount = 6 // Default timer value
+    this.timerAmount = 61 // Default timer value
     this.winScore = 7 // default win score
 
     this.words = basewords  // Load default word pack
