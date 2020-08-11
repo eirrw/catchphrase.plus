@@ -35,21 +35,34 @@ body {
     z-index: 2;
   }
 
-  #about-button {
+  #global-controls {
     position: absolute;
     right: 0;
     margin-top: 20px;
     margin-right: 20px;
 
-    &.open {
-      color: $black;
-      background: $white;
+    #mute-button {
+      &.red {
+        color: $red;
+      }
     }
 
-    &:hover {
-      background: $darkgrey;
+    #about-button {
+      position: relative;
+      //z-index: 3;
+      border-color: $white;
+
+      &.open {
+        color: $black;
+        background: $white;
+      }
+
+      &:hover {
+        background: $darkgrey;
+      }
     }
   }
+
 
   #about-window {
     position: absolute;

@@ -455,6 +455,7 @@ function startStop(socket) {
     ROOM_LIST[room].game.timer = ROOM_LIST[room].game.timerAmount
     ROOM_LIST[room].game.turn = PLAYER_LIST[socket.id].team
     ROOM_LIST[room].game.timeRunning = true
+    ROOM_LIST[room].game.roundOver = false
     ROOM_LIST[room].game.newWord()
 
     gameUpdate(room)

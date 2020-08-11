@@ -35,6 +35,7 @@ let buttonSkipWord = document.getElementById('skip')
 let buttonNextPlayer = document.getElementById('next')
 let buttonStartStop = document.getElementById('start-stop')
 let buttonAbout = document.getElementById('about-button')
+let buttonMute = document.getElementById('mute-button')
 let buttonAfk = document.getElementById('not-afk')
 let buttonServerMessageOkay = document.getElementById('server-message-okay')
 let buttonBasecards = document.getElementById('base-pack')
@@ -54,12 +55,18 @@ let scoreBlue = document.getElementById('score-blue')
 let turnMessage = document.getElementById('status')
 let timer = document.getElementById('timer')
 let scorePanel = document.getElementById('scoring-row')
+// Audio Control
+let audioTick = 'audio/tick.wav'
+let audioRing = 'audio/ring.wav'
+let audioControl = new Audio(audioTick)
+let audioInterval = 1234;
 
 
 // init
 ////////////////////////////////////////////////////////////////////////////
 // Default game settings
 let playerRole = 'guesser'
+let timeRunning = false
 
 // UI Interaction with server
 ////////////////////////////////////////////////////////////////////////////
@@ -201,7 +208,7 @@ socket.on('leaveResponse', (data) =>{       // Response to leaving room
 })
 
 socket.on('timerUpdate', (data) => {        // Server update client timer
-  timer.innerHTML = "[" + data.timer + "]"
+  updateTimer(data.timer)
 })
 
 socket.on('newGameResponse', (data) => {    // Response to New Game
@@ -238,11 +245,14 @@ socket.on('switchRole', (data) =>{  // Response to Switching Role
   }
 })
 
-socket.on('gameState', (data) =>{           // Response to gamestate update
+socket.on('gameState', (data) =>{       // Response to gamestate update
   updateInfo(data.game, data.team)      // Update the games turn information
   updateTimerSlider(data.game)          // Update the games timer slider
   updatePacks(data.game)                // Update the games pack information
-  updateBoard(data.game.word, data.game.usedWords, data.team, data.game.turn) // Update the board display
+  updateBoard(                          // Update the board display
+      data.game,
+      data.team
+  )
   updatePlayerlist(data.players)        // Update the player list for the room
 })
 
@@ -300,22 +310,22 @@ function updatePacks(game){
 }
 
 // Update the board
-function updateBoard(word, usedWords, team, turn){
+function updateBoard(game, team){
   let preWord = ''
-  if (usedWords.length > 1) {
-    preWord = usedWords[usedWords.length - 2]
+  if (game.usedWords.length > 1) {
+    preWord = game.usedWords[game.usedWords.length - 2]
   }
 
-  document.getElementById('word').innerHTML = word
+  document.getElementById('word').innerHTML = game.word
   document.getElementById('pre-word').innerHTML = preWord
 
   let notTurn = 'blue'
-  if (turn === notTurn) notTurn = 'red'
+  if (game.turn === notTurn) notTurn = 'red'
 
   let wordContainer = document.getElementById('word-container')
   let otherTeamContainer = document.getElementById('other-team-guessing')
   let yourTeamContainer = document.getElementById('your-team-guessing')
-  wordContainer.classList.add(turn)
+  wordContainer.classList.add(game.turn)
   wordContainer.classList.remove(notTurn)
 
   if (playerRole === 'speaker') {
@@ -324,13 +334,23 @@ function updateBoard(word, usedWords, team, turn){
     otherTeamContainer.classList.add('hidden')
   } else {
     wordContainer.classList.add('hidden')
-    if (team === turn) {
+    if (team === game.turn) {
       yourTeamContainer.classList.remove('hidden')
       otherTeamContainer.classList.add('hidden')
     } else {
       yourTeamContainer.classList.add('hidden')
       otherTeamContainer.classList.remove('hidden')
     }
+  }
+
+  // handle audio
+  if (!timeRunning && game.timeRunning) {
+    timeRunning = true
+    audioControl.src = audioTick
+    audioInterval = setInterval(() => {audioControl.play()}, 500)
+  } else if (timeRunning && !game.timeRunning) {
+    timeRunning = false
+    clearInterval(audioInterval)
   }
 }
 
@@ -357,4 +377,23 @@ function updatePlayerlist(players){
   }
 }
 
+function updateTimer(timerData) {
+  timer.innerHTML = "[" + timerData + "]"
+
+  if (timerData === 0)  {
+    clearInterval(audioInterval)
+    audioControl.src = audioRing
+    audioControl.play()
+  }
+}
+
 // Client Side UI Elements
+
+function mute() {
+  audioControl.muted = !audioControl.muted
+  if (audioControl.muted) {
+    buttonMute.classList.add('red')
+  } else {
+    buttonMute.classList.remove('red')
+  }
+}

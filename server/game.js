@@ -69,7 +69,7 @@ readline.createInterface({
 // Codenames Game
 class Game{
   constructor(){
-    this.timerAmount = 61 // Default timer value
+    this.timerAmount = 6 // Default timer value
     this.winScore = 7 // default win score
 
     this.words = basewords  // Load default word pack
@@ -85,7 +85,7 @@ class Game{
   init(){
     this.randomTurn()   // When game is created, select red or blue to start, randomly
     this.over = false   // Whether or not the game has been won / lost
-    this.roundOver = false // Whether or not the round is over
+    this.roundOver = true // Whether or not the round is over
     this.winner = ''    // Winning team
     this.timer = this.timerAmount // Set the timer
     this.timeRunning = false // if the timer should be running
