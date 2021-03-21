@@ -194,17 +194,18 @@ io.sockets.on('connection', function(socket){
     if (!PLAYER_LIST[socket.id]) return // Prevent Crash
     let room = PLAYER_LIST[socket.id].room  // Get the room the client was in
     let game = ROOM_LIST[room].game
-    if(data.pack === 'base'){               // Toggle packs in the game
-      game.base = !game.base
-    } else if (data.pack === 'duet'){
-      game.duet = !game.duet
-    } else if (data.pack === 'undercover'){
-      game.undercover = !game.undercover
-    } else if (data.pack === 'nlss'){
-      game.nlss = !game.nlss
+    let list = data.pack
+
+    if (game.useLists.includes(list)) {
+      game.useLists.splice(game.useLists.indexOf(list), 1)
+    } else {
+      game.useLists.push(data.pack)
     }
+
     // If all options are disabled, re-enable the base pack
-    if (!game.base && !game.duet && !game.undercover && !game.nlss) game.base = true
+    if (game.useLists.length === 0) {
+      game.useLists.push('entertainment', 'words')
+    }
 
     game.updateWordPool()
     gameUpdate(room)
@@ -498,9 +499,8 @@ function gameUpdate(room){
   // Create data package to send to the client
   let gameState = {
     room: room,
-    players:ROOM_LIST[room].players,
-    game:ROOM_LIST[room].game,
-    difficulty:ROOM_LIST[room].difficulty,
+    players: ROOM_LIST[room].players,
+    game: ROOM_LIST[room].game,
   }
   for (let player in ROOM_LIST[room].players){ // For everyone in the passed room
     gameState.team = PLAYER_LIST[player].team  // Add specific clients team info

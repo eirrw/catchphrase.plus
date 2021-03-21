@@ -1,70 +1,25 @@
 
 let fs = require('fs')
+let path = require('path')
 let readline = require('readline')
 
-// Load base words into an array
-let basewords = []
-var filename = './server/words.txt'
-readline.createInterface({
-    input: fs.createReadStream(filename),
+const WORDS_PATH = "./server/words/"
+
+// get wordlists
+let wordfiles = fs.readdirSync(WORDS_PATH)
+let wordlists = []
+
+// load wordlists
+wordfiles.forEach(wordfile => {
+  let words = []
+
+  readline.createInterface({
+    input: fs.createReadStream(WORDS_PATH + wordfile),
     terminal: false
-}).on('line', (line) => {basewords.push(line)})
+  }).on('line', (line) => {words.push(line)})
 
-// Load NLSS words into an array
-let nlsswords = []
-filename = './server/nlss-words.txt'
-readline.createInterface({
-    input: fs.createReadStream(filename),
-    terminal: false
-}).on('line', (line) => {nlsswords.push(line)})
-
-// Load Duet words into an array
-let duetwords = []
-filename = './server/duet-words.txt'
-readline.createInterface({
-    input: fs.createReadStream(filename),
-    terminal: false
-}).on('line', (line) => {duetwords.push(line)})
-
-// Load Undercover words into an array
-let undercoverwords = []
-filename = './server/undercover-words.txt'
-readline.createInterface({
-    input: fs.createReadStream(filename),
-    terminal: false
-}).on('line', (line) => {undercoverwords.push(line)})
-
-// Load easy words into an array
-let easywords = []
-filename = './server/catchphrase-easy.txt'
-readline.createInterface({
-  input: fs.createReadStream(filename),
-  terminal: false
-}).on('line', (line) => {easywords.push(line)})
-
-// Load medium words into an array
-let mediumwords = []
-filename = './server/catchphrase-medium.txt'
-readline.createInterface({
-  input: fs.createReadStream(filename),
-  terminal: false
-}).on('line', (line) => {mediumwords.push(line)})
-
-// Load hard words into an array
-let hardwords = []
-filename = './server/catchphrase-hard.txt'
-readline.createInterface({
-  input: fs.createReadStream(filename),
-  terminal: false
-}).on('line', (line) => {hardwords.push(line)})
-
-// Load really hard words into an array
-let reallyhardwords = []
-filename = './server/catchphrase-reallyhard.txt'
-readline.createInterface({
-  input: fs.createReadStream(filename),
-  terminal: false
-}).on('line', (line) => {reallyhardwords.push(line)})
+  wordlists[path.parse(wordfile).name] = words
+});
 
 // Codenames Game
 class Game{
@@ -72,12 +27,10 @@ class Game{
     this.timerAmount = 61 // Default timer value
     this.winScore = 7 // default win score
 
-    this.words = basewords  // Load default word pack
+    this.availLists = Object.keys(wordlists)
+    this.useLists = ['entertainment', 'words']
+    this.updateWordPool()
     this.usedWords = []
-    this.base = true
-    this.duet = false
-    this.undercover = false
-    this.nlss = false
 
     this.init();
   }
@@ -139,10 +92,13 @@ class Game{
   // update the list of available words
   updateWordPool(){
     let pool = []
-    if (this.base) pool = pool.concat(basewords)
-    if (this.duet) pool = pool.concat(duetwords)
-    if (this.undercover) pool = pool.concat(undercoverwords)
-    if (this.nlss) pool = pool.concat(nlsswords)
+    this.useLists.forEach((list, index, lists) => {
+      if (wordlists[list] === undefined) {
+        lists.splice(index, 1)
+      } else {
+        pool = pool.concat(wordlists[list])
+      }
+    });
     this.words = pool
   }
 

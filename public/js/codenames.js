@@ -25,6 +25,7 @@ let afkWindow = document.getElementById('afk-window')
 let serverMessageWindow = document.getElementById('server-message')
 let serverMessage = document.getElementById('message')
 let overlay = document.getElementById('overlay')
+let categories = document.getElementById('category-select')
 // Buttons
 let leaveRoom = document.getElementById('leave-room')
 let joinRed = document.getElementById('join-red')
@@ -38,10 +39,10 @@ let buttonAbout = document.getElementById('about-button')
 let buttonMute = document.getElementById('mute-button')
 let buttonAfk = document.getElementById('not-afk')
 let buttonServerMessageOkay = document.getElementById('server-message-okay')
-let buttonBasecards = document.getElementById('base-pack')
-let buttonDuetcards = document.getElementById('duet-pack')
-let buttonUndercovercards = document.getElementById('undercover-pack')
-let buttonNLSScards = document.getElementById('nlss-pack')
+//let buttonBasecards = document.getElementById('base-pack')
+//let buttonDuetcards = document.getElementById('duet-pack')
+//let buttonUndercovercards = document.getElementById('undercover-pack')
+//let buttonNLSScards = document.getElementById('nlss-pack')
 // Slider
 let timerSlider = document.getElementById('timer-slider')
 let timerSliderLabel = document.getElementById('timer-slider-label')
@@ -143,22 +144,10 @@ buttonAbout.onclick = () => {
     buttonAbout.classList.remove('open')
   }
 }
-// User Clicks card pack
-buttonBasecards.onclick = () => {
-  socket.emit('changeCards', {pack:'base'})
-}
-// User Clicks card pack
-buttonDuetcards.onclick = () => {
-  socket.emit('changeCards', {pack:'duet'})
-}
-// User Clicks card pack
-buttonUndercovercards.onclick = () => {
-  socket.emit('changeCards', {pack:'undercover'})
-}
-// User Clicks card pack
-buttonNLSScards.onclick = () => {
-  socket.emit('changeCards', {pack:'nlss'})
-}
+categories.addEventListener('click', (e) => {
+  if (!e.target.matches('button')) return
+  socket.emit('changeCards', {pack:e.target.value})
+})
 
 // When the slider is changed
 timerSlider.addEventListener("input", () =>{
@@ -298,14 +287,17 @@ function updateTimerSlider(game){
 
 // Update the pack toggle buttons
 function updatePacks(game){
-  if (game.base) buttonBasecards.className = 'enabled'
-  else buttonBasecards.className = ''
-  if (game.duet) buttonDuetcards.className = 'enabled'
-  else buttonDuetcards.className = ''
-  if (game.undercover) buttonUndercovercards.className = 'enabled'
-  else buttonUndercovercards.className = ''
-  if (game.nlss) buttonNLSScards.className = 'enabled'
-  else buttonNLSScards.className = ''
+  categories.innerHTML = ''
+  game.availLists.forEach(wordlist => {
+    e = document.createElement('button')
+    e.value = wordlist
+    if (game.useLists.includes(wordlist)) e.className = 'enabled'
+
+    t = document.createTextNode(wordlist)
+    e.appendChild(t)
+
+    categories.appendChild(e)
+  });
   document.getElementById('word-pool').innerHTML = "Word Pool: " + game.words.length
 }
 
