@@ -4,6 +4,7 @@ let path = require('path')
 let readline = require('readline')
 
 const WORDS_PATH = "./server/words/"
+const DEFAULT_LISTS = ['entertainment', 'everyday_life']
 
 // get wordlists
 let wordfiles = fs.readdirSync(WORDS_PATH)
@@ -28,7 +29,7 @@ class Game{
     this.winScore = 7 // default win score
 
     this.availLists = Object.keys(wordlists)
-    this.useLists = ['entertainment', 'words']
+    this.useLists = DEFAULT_LISTS.slice()
     this.updateWordPool()
     this.usedWords = []
 
@@ -92,6 +93,7 @@ class Game{
   // update the list of available words
   updateWordPool(){
     let pool = []
+    if (this.useLists.length === 0) this.useLists = DEFAULT_LISTS.slice()
     this.useLists.forEach((list, index, lists) => {
       if (wordlists[list] === undefined) {
         lists.splice(index, 1)

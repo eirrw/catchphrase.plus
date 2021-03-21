@@ -202,14 +202,8 @@ io.sockets.on('connection', function(socket){
       game.useLists.push(data.pack)
     }
 
-    // If all options are disabled, re-enable the base pack
-    if (game.useLists.length === 0) {
-      game.useLists.push('entertainment', 'words')
-    }
-
     game.updateWordPool()
     gameUpdate(room)
-    
   })
 
   // Change timer slider
