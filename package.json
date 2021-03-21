@@ -6,24 +6,23 @@
   "dependencies": {
     "express": "^4.17.1",
     "fs": "0.0.1-security",
-    "node-sass": "^4.14.1",
     "readfile": "^1.0.1",
     "request": "^2.88.2",
     "socket.io": "^2.3.0",
     "socketio-wildcard": "^2.0.0"
   },
-  "engines": {
-    "node": "10.16.3"
-  },
-  "devDependencies": {},
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "pm2 start",
-    "scss": "node-sass --watch assets/scss -o public/css"
+    "start": "node app.js",
+    "start-prod": "pm2 start",
+    "scss": "sass --watch assets/scss:public/css"
   },
   "contributors": [
     "Joe Marchesi",
     "Erik Wilson"
   ],
-  "license": "ISC"
+  "license": "ISC",
+  "devDependencies": {
+    "sass": "^1.32.8"
+  }
 }
