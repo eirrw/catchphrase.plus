@@ -4,7 +4,7 @@ let path = require('path')
 let readline = require('readline')
 
 const WORDS_PATH = "./server/words/"
-const DEFAULT_LISTS = ['entertainment', 'everyday_life']
+const DEFAULT_LISTS = ['entertainment', 'everyday_life', 'fun_and_games']
 
 // get wordlists
 let wordfiles = fs.readdirSync(WORDS_PATH)

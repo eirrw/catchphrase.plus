@@ -1,4 +1,4 @@
-let socket = io() // Connect to server
+let socket = io({path: window.location.pathname + 'socket.io'}) // Connect to server
 
 
 // Sign In Page Elements
@@ -53,10 +53,11 @@ let turnMessage = document.getElementById('status')
 let timer = document.getElementById('timer')
 let scorePanel = document.getElementById('scoring-row')
 // Audio Control
-let audioTick = 'audio/tick.wav'
+let sound = true;
+let audioTickSingle = 'audio/tick-single.wav'
+let audioTickDouble = 'audio/tick-double.wav'
+let audioTickQuad = 'audio/tick-quad.wav'
 let audioRing = 'audio/ring.wav'
-let audioControl = new Audio(audioTick)
-let audioInterval = 1234;
 
 
 // init
@@ -331,15 +332,8 @@ function updateBoard(game, team){
     }
   }
 
-  // handle audio
-  if (!timeRunning && game.timeRunning) {
-    timeRunning = true
-    audioControl.src = audioTick
-    audioInterval = setInterval(() => {audioControl.play()}, 500)
-  } else if (timeRunning && !game.timeRunning) {
-    timeRunning = false
-    clearInterval(audioInterval)
-  }
+  // handle timer
+  timeRunning = game.timeRunning
 }
 
 // Update the player list
@@ -368,18 +362,30 @@ function updatePlayerlist(players){
 function updateTimer(timerData) {
   timer.innerHTML = "[" + timerData + "]"
 
-  if (timerData === 0)  {
-    clearInterval(audioInterval)
-    audioControl.src = audioRing
-    audioControl.play()
+  if ((timerData > 30 && timerData % 2 === 0) || (timerData > 15 && timerData <= 30)) {
+    playWav(audioTickSingle)
+  } else if (timerData <= 15 && timerData > 5) {
+    playWav(audioTickDouble)
+  } else if (timerData <= 5 && timerData > 0) {
+    playWav(audioTickQuad)
+  } else if (timerData === 0)  {
+    playWav(audioRing)
   }
 }
 
 // Client Side UI Elements
 
+function playWav(wav) {
+  if (sound) {
+    let audio = new Audio(wav)
+    audio.type = 'audio/wav'
+    audio.play()
+  }
+}
+
 function mute() {
-  audioControl.muted = !audioControl.muted
-  if (audioControl.muted) {
+  sound = !sound
+  if (!sound) {
     buttonMute.classList.add('red')
   } else {
     buttonMute.classList.remove('red')
