@@ -1,5 +1,5 @@
-@import "assets/scss/variables";
-@import "assets/scss/partials";
+@use "variables" as *;
+@use "partials" as *;
 
 body {
   margin: 32px 0 0;
@@ -172,19 +172,20 @@ body {
     .join-input {
       position: relative;
       display: block;
-      width: 275px;
+      width: 90%;
       margin: 0 auto;
       text-align: left;
       height: 40px;
 
       input {
         float: right;
-        line-height: 18px;
+        line-height: 2em;
       }
     }
 
     div.container {
       display: flex;
+      width: 100%;
 
       button {
         position: relative;
