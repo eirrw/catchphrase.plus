@@ -162,6 +162,8 @@ io.sockets.on('connection', function(socket){
     if (!PLAYER_LIST[socket.id]) return   // Prevent Crash
     let player = PLAYER_LIST[socket.id];  // Get player who made request
     player.team = data.team               // Update their team
+    player.role = ROLE_GUESSER            // update their role
+    socket.emit('switchRole', {role:ROLE_GUESSER})
     gameUpdate(player.room)               // Update the game for everyone in their room
   })
 
@@ -331,7 +333,7 @@ function socketDisconnect(socket){
 // Randomize Teams function
 // Will mix up the teams in the room that the client is in
 function randomizeTeams(socket){
-  if (!PLAYER_LIST[socket.id]) return // Prevent Crash
+  if (!PLAYER_LIST[socket.id]) return      // Prevent Crash
   let room = PLAYER_LIST[socket.id].room   // Get the room that the client called from
   let players = ROOM_LIST[room].players    // Get the players in the room
 
@@ -357,6 +359,8 @@ function randomizeTeams(socket){
       color = 0
     }
     player.order = Math.floor(i / 2)
+    player.role = ROLE_GUESSER
+    SOCKET_LIST[placed[i]].emit('switchRole', {role: ROLE_GUESSER})
   }
   gameUpdate(room) // Update everyone in the room
 }
@@ -400,13 +404,15 @@ function nextPlayer(socket) {
   if (PLAYER_LIST[socket.id].team === ROOM_LIST[room].game.turn) {
     if (!ROOM_LIST[room].game.over) {
       if (PLAYER_LIST[socket.id].role !== ROLE_GUESSER) {
-        ROOM_LIST[room].game.newWord()
+        // get new word if in game
+        if (ROOM_LIST[room].game.timeRunning) ROOM_LIST[room].game.newWord()
 
+        // get the next team
         let nextTeam = TEAM_BLUE
         if (PLAYER_LIST[socket.id].team === nextTeam) nextTeam = TEAM_RED
 
+        // get next player from list
         let players = getPlayers(room, nextTeam)
-
         let next = players[(ROOM_LIST[room].lastPlayers.shift() || 0) + 1]
         if (next === undefined) next = players[0]
         if (next === undefined) {
@@ -414,14 +420,18 @@ function nextPlayer(socket) {
           return
         }
 
+        // append order of this player to last list
         ROOM_LIST[room].lastPlayers.push(PLAYER_LIST[socket.id].order)
 
+        // set the next player as speaker
         PLAYER_LIST[next].role = ROLE_SPEAKER
         switchRole(next)
 
+        // set the previous speaker as a guesser
         PLAYER_LIST[socket.id].role = ROLE_GUESSER
         switchRole(socket.id)
 
+        // switch turns
         ROOM_LIST[room].game.switchTurn()
 
         gameUpdate(room)
