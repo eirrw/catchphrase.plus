@@ -9,6 +9,7 @@ const DEFAULT_LISTS = [
   'everyday_life',
   'fun_and_games',
   'the_world',
+  'variety',
 ]
 
 // get wordlists
@@ -22,7 +23,7 @@ wordfiles.forEach(wordfile => {
   readline.createInterface({
     input: fs.createReadStream(WORDS_PATH + wordfile),
     terminal: false
-  }).on('line', (line) => {words.push(line)})
+  }).on('line', (line) => {if (line.charAt(0) !== '#') words.push(line)})
 
   wordlists[path.parse(wordfile).name] = words
 });

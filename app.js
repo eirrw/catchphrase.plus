@@ -553,9 +553,10 @@ setInterval(()=>{
   // Game Timer Logic
   for (let room in ROOM_LIST){
     if (ROOM_LIST[room].game.timeRunning){
-      ROOM_LIST[room].game.timer--          // If the room is in timed mode, count timer down
+      ROOM_LIST[room].game.timer-- 
 
-      if (ROOM_LIST[room].game.timer < 0){  // If timer runs out, switch that rooms turn
+      // If timer runs out, end the round
+      if (ROOM_LIST[room].game.timer <= 0){
         ROOM_LIST[room].game.timeRunning = false
         ROOM_LIST[room].game.roundOver = true
         gameUpdate(room)   // Update everyone in the room
