@@ -35,6 +35,7 @@ let newGame = document.getElementById('new-game')
 let buttonSkipWord = document.getElementById('skip')
 let buttonNextPlayer = document.getElementById('next')
 let buttonStartStop = document.getElementById('start-stop')
+let buttonFlag = document.getElementById('flag')
 let buttonAbout = document.getElementById('about-button')
 let buttonMute = document.getElementById('mute-button')
 let buttonAfk = document.getElementById('not-afk')
@@ -122,6 +123,11 @@ function nextPlayer() {
 // start or stop the round/timer
 function startStop() {
   socket.emit('startStop', {})
+}
+
+// report the current phrase
+function flagPhrase() {
+  socket.emit('report', {})
 }
 
 // update the score for the opposite team
@@ -321,8 +327,10 @@ function updateBoard(game, team){
     wordContainer.classList.remove('hidden')
     yourTeamContainer.classList.add('hidden')
     otherTeamContainer.classList.add('hidden')
+    buttonFlag.classList.remove('hidden')
   } else {
     wordContainer.classList.add('hidden')
+    buttonFlag.classList.add('hidden')
     if (team === game.turn) {
       yourTeamContainer.classList.remove('hidden')
       otherTeamContainer.classList.add('hidden')
@@ -331,9 +339,6 @@ function updateBoard(game, team){
       otherTeamContainer.classList.remove('hidden')
     }
   }
-
-  // handle timer
-  timeRunning = game.timeRunning
 }
 
 // Update the player list

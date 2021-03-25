@@ -500,8 +500,9 @@ body {
             align-items: center;
 
             #word-container {
-              width: 60%;
+              min-width: 60%;
               height: 60px;
+              padding: 0 1%;
               text-align: center;
 
               &.blue {
@@ -520,6 +521,12 @@ body {
               font-family: monospace;
               text-transform: uppercase;
               color: $white;
+            }
+
+            #flag {
+              display: block;
+              color: $grey;
+              cursor: pointer;
             }
 
             #previous-word {

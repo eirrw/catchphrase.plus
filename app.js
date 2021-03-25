@@ -1,5 +1,5 @@
-
 ////////////////////////////////////////////////////////////////////////////
+const fs = require('fs')
 
 // Express
 let express = require('express')
@@ -181,6 +181,9 @@ io.sockets.on('connection', function(socket){
 
   // start or stop the current round
   socket.on('startStop', () => {startStop(socket)})
+
+  // report the current word
+  socket.on('report', () => {reportPhrase(socket)})
 
   // update score
   socket.on('updateScore', (data) => {updateScore(socket, data)})
@@ -465,6 +468,16 @@ function startStop(socket) {
 
     gameUpdate(room)
   }
+}
+
+// log reported phrase
+function reportPhrase(socket) {
+  let room = PLAYER_LIST[socket.id].room
+  let phrase = ROOM_LIST[room].game.word
+  fs.appendFile('./reported-phrases', phrase + '\n', (err) => {
+    if (err) throw err
+    console.log('logged reported phrase: ' + phrase)
+  })
 }
 
 // update the score
