@@ -1,8 +1,10 @@
 ////////////////////////////////////////////////////////////////////////////
-const fs = require('fs')
-
-// Express
-let express = require('express')
+import { appendFile } from 'fs';
+import express from 'express';
+import socketio from 'socket.io'
+import Game from './game'
+import Room from './room'
+import SocketIO from 'socket.io';
 
 // Create app
 let app = express()
@@ -21,7 +23,7 @@ function listen(){
 app.use(express.static('public'))
 
 // change timeout settings for development
-serverSettings = {}
+let serverSettings = {}
 if (process.env.NODE_ENV === 'development')
   serverSettings = {
     pingInterval: 10000,
@@ -29,26 +31,9 @@ if (process.env.NODE_ENV === 'development')
   }
 
 // Websocket
-let io = require('socket.io')(server, serverSettings)
-
-// Catch wildcard socket events
-var middleware = require('socketio-wildcard')()
-io.use(middleware)
-
-// Daily Server Restart time
-// UTC 13:00:00 = 9AM EST
-let restartHour = 11//13 original
-let restartMinute = 0//0
-let restartSecond = 5
-// restart warning time
-let restartWarningHour = 10//12 original
-let restartWarningMinute = 50//50
-let restartWarningSecond = 2
+let io = socketio(server, serverSettings)
 
 ////////////////////////////////////////////////////////////////////////////
-
-// Catchphrase Game
-const Game = require('./server/game.js')
 
 // Objects to keep track of sockets, rooms and players
 let SOCKET_LIST = {}
@@ -61,69 +46,9 @@ let ROLE_SPEAKER = 'speaker';
 let TEAM_BLUE = 'blue';
 let TEAM_RED = 'red';
 
-// Room class
-// Live rooms will have a name and password and keep track of game options / players in room
-class Room {
-  constructor(name, pass){
-    this.room = '' + name
-    this.password = '' + pass
-    this.players = {}
-    this.game = new Game()
-    this.lastPlayers = []
-
-    // Add room to room list
-    ROOM_LIST[this.room] = this
-  }
-}
-
-// Player class
-// When players log in, they give a nickname, have a socket and a room they're trying to connect to
-class Player {
-  constructor(nickname, room, socket){
-    this.id = socket.id
-
-    // If someone in the room has the same name, append (1) to their nickname
-    let nameAvailable = false
-    let nameExists = false;
-    let tempName = nickname
-    let counter = 0
-    while (!nameAvailable){
-      if (ROOM_LIST[room]){
-        nameExists = false;
-        for (let i in ROOM_LIST[room].players){
-          if (ROOM_LIST[room].players[i].nickname === tempName) nameExists = true
-        }
-        if (nameExists) tempName = nickname + "(" + ++counter + ")"
-        else nameAvailable = true
-      }
-    }
-    this.nickname = tempName
-    this.room = room
-    this.team = 'undecided'
-    this.order = null
-    this.role = ROLE_GUESSER
-    this.timeout = 2100         // # of seconds until kicked for afk (35min)
-    this.afktimer = this.timeout       
-
-    // Add player to player list and add their socket to the socket list
-    PLAYER_LIST[this.id] = this
-  }
-
-  // When a player joins a room, evenly distribute them to a team
-  joinTeam(){
-    let room = ROOM_LIST[this.room]
-    let numInRoom = Object.keys(room.players).length
-
-    if (numInRoom % 2 === 0) this.team = TEAM_BLUE
-    else this.team = TEAM_RED
-    this.order = Math.floor((numInRoom - 1) / 2)
-  }
-}
-
-
 // Server logic
 ////////////////////////////////////////////////////////////////////////////
-io.sockets.on('connection', function(socket){
+io.on('connection', (socket) => {
 
   // Alert server of the socket connection
   SOCKET_LIST[socket.id] = socket
@@ -226,10 +151,13 @@ io.sockets.on('connection', function(socket){
   })
 })
 
-// Create room function
-// Gets a room name and password and attempts to make a new room if one doesn't exist
-// On creation, the client that created the room is created and added to the room
-function createRoom(socket, data){
+/**
+ * Create room function
+ * 
+ * Gets a room name and password and attempts to make a new room if one doesn't exist
+ * On creation, the client that created the room is created and added to the room
+ */
+function createRoom(socket:SocketIO.Socket, data:JSON){
   let roomName = data.room.trim()     // Trim whitespace from room name
   let passName = data.password.trim() // Trim whitespace from password
   let userName = data.nickname.trim() // Trim whitespace from nickname
@@ -259,7 +187,7 @@ function createRoom(socket, data){
 }
 
 // Join room function
-// Gets a room name and poassword and attempts to join said room
+// Gets a room name and password and attempts to join said room
 // On joining, the client that joined the room is created and added to the room
 function joinRoom(socket, data){
   let roomName = data.room.trim()     // Trim whitespace from room name
@@ -474,7 +402,7 @@ function startStop(socket) {
 function reportPhrase(socket) {
   let room = PLAYER_LIST[socket.id].room
   let phrase = ROOM_LIST[room].game.word
-  fs.appendFile('./reported-phrases', phrase + '\n', (err) => {
+  appendFile('./reported-phrases', phrase + '\n', (err) => {
     if (err) throw err
     console.log('logged reported phrase: ' + phrase)
   })
