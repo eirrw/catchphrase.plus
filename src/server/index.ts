@@ -1,22 +1,27 @@
 ////////////////////////////////////////////////////////////////////////////
 import { appendFile } from 'fs';
 import express from 'express';
-import socketio from 'socket.io'
-import Game from './game'
+import { Server, Socket } from 'socket.io';
 import Room from './room'
-import SocketIO from 'socket.io';
+import Player from './player';
+import { Role, Team } from '../shared/enum';
+import { AddressInfo } from 'node:net';
+import { serialize } from 'node:v8';
 
-// Create app
-let app = express()
+type SocketStore = { socket: Socket, player?: Player, room?: Room }
+type SocketList = Map<string, SocketStore>
+type RoomList = Map<string, Room>
 
-//Set up server
-let server = app.listen(process.env.PORT || 2000, listen);
+// Create server 
+const app = express()
+const server = app.listen(process.env.PORT || 2000, listen);
 
 // Callback function confirming server start
-function listen(){
-  let host = server.address().address;
-  let port = server.address().port;
-  console.log('Catchphrase Server Started at http://' + host + ':' + port);
+function listen() {
+    let address = server.address() as AddressInfo
+    let host = address.address;
+    let port = address.port;
+    console.log('Catchphrase Server Started at http://' + host + ':' + port);
 }
 
 // Files for client
@@ -25,130 +30,102 @@ app.use(express.static('public'))
 // change timeout settings for development
 let serverSettings = {}
 if (process.env.NODE_ENV === 'development')
-  serverSettings = {
-    pingInterval: 10000,
-    pingTimeout: 300000
-  }
+    serverSettings = {
+        pingInterval: 10000,
+        pingTimeout: 300000
+    }
 
 // Websocket
-let io = socketio(server, serverSettings)
+const io: Server = new Server(server, serverSettings)
+
+// Restart setting
+const restartConfig = {
+    hour: 11,
+    minute: 5,
+    second: 0,
+    warningHour: 11,
+    warningMinute: 0,
+    warningSecond: 0
+}
 
 ////////////////////////////////////////////////////////////////////////////
 
 // Objects to keep track of sockets, rooms and players
-let SOCKET_LIST = {}
-let ROOM_LIST = {}
-let PLAYER_LIST = {}
-
-// string constant
-let ROLE_GUESSER = 'guesser';
-let ROLE_SPEAKER = 'speaker';
-let TEAM_BLUE = 'blue';
-let TEAM_RED = 'red';
+let SOCKET_LIST: SocketList = new Map()
+let ROOM_LIST: RoomList = new Map()
 
 // Server logic
 ////////////////////////////////////////////////////////////////////////////
 io.on('connection', (socket) => {
 
-  // Alert server of the socket connection
-  SOCKET_LIST[socket.id] = socket
-  logStats('CONNECT: ' + socket.id)
+    // Alert server of the socket connection
+    SOCKET_LIST.set(socket.id, { socket: socket })
+    logStats('CONNECT: ' + socket.id)
 
-  // Pass server stats to client
-  socket.emit('serverStats', {
-    players: Object.keys(PLAYER_LIST).length,
-    rooms: Object.keys(ROOM_LIST).length
-  })
+    // Pass server stats to client
+    socket.emit('serverStats', {
+        players: Object.keys(SOCKET_LIST).length,
+        rooms: Object.keys(ROOM_LIST).length
+    })
 
-  // LOBBY STUFF
-  ////////////////////////////////////////////////////////////////////////////
+    // LOBBY STUFF
+    ////////////////////////////////////////////////////////////////////////////
 
-  // Room Creation. Called when client attempts to create a rooom
-  // Data: player nickname, room name, room password
-  socket.on('createRoom', (data) => {createRoom(socket, data)})
+    // Room Creation. Called when client attempts to create a rooom
+    // Data: player nickname, room name, room password
+    socket.on('createRoom', (data) => { createRoom(socket, data) })
 
-  // Room Joining. Called when client attempts to join a room
-  // Data: player nickname, room name, room password
-  socket.on('joinRoom', (data) => {joinRoom(socket, data)})
-  
-  // Room Leaving. Called when client leaves a room
-  socket.on('leaveRoom', () =>{leaveRoom(socket)})
+    // Room Joining. Called when client attempts to join a room
+    // Data: player nickname, room name, room password
+    socket.on('joinRoom', (data) => { joinRoom(socket, data) })
 
-  // Client Disconnect
-  socket.on('disconnect', () => {socketDisconnect(socket)})
+    // Room Leaving. Called when client leaves a room
+    socket.on('leaveRoom', () => { leaveRoom(socket) })
+
+    // Client Disconnect
+    socket.on('disconnect', () => { socketDisconnect(socket) })
 
 
-  // GAME STUFF
-  ////////////////////////////////////////////////////////////////////////////
+    // GAME STUFF
+    ////////////////////////////////////////////////////////////////////////////
 
-  // Join Team. Called when client joins a team (red / blue)
-  // Data: team color
-  socket.on('joinTeam', (data) => {
-    if (!PLAYER_LIST[socket.id]) return   // Prevent Crash
-    let player = PLAYER_LIST[socket.id];  // Get player who made request
-    player.team = data.team               // Update their team
-    player.role = ROLE_GUESSER            // update their role
-    socket.emit('switchRole', {role:ROLE_GUESSER})
-    gameUpdate(player.room)               // Update the game for everyone in their room
-  })
+    // Join Team. Called when client joins a team (red / blue)
+    // Data: team color
+    socket.on('joinTeam', (data) => { joinTeam(socket, data) })
 
-  // Randomize Team. Called when client randomizes the teams
-  socket.on('randomizeTeams', () => {randomizeTeams(socket)})
+    // Randomize Team. Called when client randomizes the teams
+    socket.on('randomizeTeams', () => { randomizeTeams(socket) })
 
-  // New Game. Called when client starts a new game
-  socket.on('newGame', () =>{newGame(socket)})
+    // New Game. Called when client starts a new game
+    socket.on('newGame', () => { newGame(socket) })
 
-  // skip the current word
-  socket.on('skipWord', () => {skipWord(socket)})
+    // skip the current word
+    socket.on('skipWord', () => { skipWord(socket) })
 
-  // change word and pass to the next player
-  socket.on('nextPlayer', () => {nextPlayer(socket)})
+    // change word and pass to the next player
+    socket.on('nextPlayer', () => { nextPlayer(socket) })
 
-  // start or stop the current round
-  socket.on('startStop', () => {startStop(socket)})
+    // start or stop the current round
+    socket.on('startStop', () => { startStop(socket) })
 
-  // report the current word
-  socket.on('report', () => {reportPhrase(socket)})
+    // report the current word
+    socket.on('report', () => { reportPhrase(socket) })
 
-  // update score
-  socket.on('updateScore', (data) => {updateScore(socket, data)})
+    // update score
+    socket.on('updateScore', (data) => { updateScore(socket, data) })
 
-  // Active. Called whenever client interacts with the game, resets afk timer
-  socket.on('*', () => {
-    if (!PLAYER_LIST[socket.id]) return // Prevent Crash
-    PLAYER_LIST[socket.id].afktimer = PLAYER_LIST[socket.id].timeout
-  })
+    // Change card packs
+    socket.on('changeCards', (data) => { switchPacks(socket, data) })
 
-  // Change card packs
-  socket.on('changeCards', (data) => {
-    if (!PLAYER_LIST[socket.id]) return // Prevent Crash
-    let room = PLAYER_LIST[socket.id].room  // Get the room the client was in
-    let game = ROOM_LIST[room].game
-    let list = data.pack
+    // Change timer slider
+    socket.on('timerSlider', (data) => { changeTimer(socket, data) })
 
-    if (game.useLists.includes(list)) {
-      game.useLists.splice(game.useLists.indexOf(list), 1)
-    } else {
-      game.useLists.push(data.pack)
-    }
+    // Active. Called whenever client interacts with the game, resets afk timer
+    socket.on('*', () => {
+        // if (!SOCKET_LIST.get(socket.id)) return // Prevent Crash
+        SOCKET_LIST.get(socket.id).player.afktimer = Player.timeout
+    })
 
-    game.updateWordPool()
-    gameUpdate(room)
-  })
-
-  // Change timer slider
-  socket.on('timerSlider', (data) => {
-    if (!PLAYER_LIST[socket.id]) return // Prevent Crash
-    let room = PLAYER_LIST[socket.id].room  // Get the room the client was in
-    let game = ROOM_LIST[room].game
-    let currentAmount = game.timerAmount - 1  // Current timer amount
-    let seconds = (data.value * 60) + 1       // the new amount of the slider
-    if (currentAmount !== seconds){           // if they dont line up, update clients
-      game.timerAmount = seconds
-      game.timer = game.timerAmount
-      gameUpdate(room)
-    }
-  })
 })
 
 /**
@@ -156,367 +133,464 @@ io.on('connection', (socket) => {
  * 
  * Gets a room name and password and attempts to make a new room if one doesn't exist
  * On creation, the client that created the room is created and added to the room
+ * 
+ * @param socket Socket the connection is coming from
+ * @param data Data object included in socket
  */
-function createRoom(socket:SocketIO.Socket, data:JSON){
-  let roomName = data.room.trim()     // Trim whitespace from room name
-  let passName = data.password.trim() // Trim whitespace from password
-  let userName = data.nickname.trim() // Trim whitespace from nickname
+function createRoom(socket: Socket, data: any) {
+    let roomName: string = data.room.trim()
+    let password: string = data.password.trim()
+    let username: string = data.nickname.trim()
 
-  if (ROOM_LIST[roomName]) {   // If the requested room name is taken
-    // Tell the client the room arleady exists
-    socket.emit('createResponse', {success:false, msg:'Room Already Exists'})
-  } else {
-    if (roomName === "") {    
-      // Tell the client they need a valid room name
-      socket.emit('createResponse', {success:false, msg:'Enter A Valid Room Name'})
-    } else {
-      if (userName === ''){
+    if (ROOM_LIST.has(roomName)) {
+        // If the requested room name is taken
+        // Tell the client the room arleady exists
+        socket.emit('createResponse', { success: false, msg: 'Room Already Exists' })
+        return
+    }
+
+    if (roomName === "") {
+        // Tell the client they need a valid room name
+        socket.emit('createResponse', { success: false, msg: 'Enter A Valid Room Name' })
+        return
+    }
+
+    if (username === '') {
         // Tell the client they need a valid nickname
-        socket.emit('createResponse', {success:false, msg:'Enter A Valid Nickname'})
-      } else {    // If the room name and nickname are both valid, proceed
-        new Room(roomName, passName)                          // Create a new room
-        let player = new Player(userName, roomName, socket)   // Create a new player
-        ROOM_LIST[roomName].players[socket.id] = player       // Add player to room
-        player.joinTeam()                                     // Distribute player to team
-        socket.emit('createResponse', {success:true, msg: ""})// Tell client creation was successful
-        gameUpdate(roomName)                                  // Update the game for everyone in this room
-        logStats(socket.id + "(" + player.nickname + ") CREATED '" + ROOM_LIST[player.room].room + "'(" + Object.keys(ROOM_LIST[player.room].players).length + ")")
-      }
+        socket.emit('createResponse', { success: false, msg: 'Enter A Valid Nickname' })
+    } else {
+        // If the room name and nickname are both valid, proceed
+        let room = new Room(roomName, password)
+        let player = new Player(username, socket)
+
+        // store the room + add player to it
+        ROOM_LIST.set(roomName, room)
+        socket.join(roomName)
+        room.addPlayer(player)
+
+        // store player information
+        SOCKET_LIST.get(socket.id).player = player
+        SOCKET_LIST.get(socket.id).room = room
+
+        // report success
+        socket.emit('createResponse', { success: true, msg: "" })
+        gameUpdate(room)
+        logStats(socket.id + "(" + player.nickname + ") CREATED '" + room.name)
     }
-  }
 }
 
-// Join room function
-// Gets a room name and password and attempts to join said room
-// On joining, the client that joined the room is created and added to the room
-function joinRoom(socket, data){
-  let roomName = data.room.trim()     // Trim whitespace from room name
-  let pass = data.password.trim()     // Trim whitespace from password
-  let userName = data.nickname.trim() // Trim whitespace from nickname
+/**
+ * Join room function
+ * Gets a room name and password and attempts to join said room
+ * On joining, the client that joined the room is created and added to the room
+ * 
+ * @param socket 
+ * @param data 
+ */
+function joinRoom(socket: Socket, data: any) {
+    let roomName: string = data.room.trim()
+    let password: string = data.password.trim()
+    let username: string = data.nickname.trim()
 
-  if (!ROOM_LIST[roomName]){
-    // Tell client the room doesnt exist
-    socket.emit('joinResponse', {success:false, msg:"Room Not Found"})
-  } else {
-    if (ROOM_LIST[roomName].password !== pass){ 
-      // Tell client the password is incorrect
-      socket.emit('joinResponse', {success:false, msg:"Incorrect Password"})
-    } else {
-      if (userName === ''){
+    if (!ROOM_LIST.has(roomName)) {
+        // Tell client the room doesnt exist
+        socket.emit('joinResponse', { success: false, msg: "Room Not Found" })
+        return
+    }
+
+    if (ROOM_LIST.get(roomName).password !== password) {
+        // Tell client the password is incorrect
+        socket.emit('joinResponse', { success: false, msg: "Incorrect Password" })
+        return
+    }
+
+    if (username === '') {
         // Tell client they need a valid nickname
-        socket.emit('joinResponse', {success:false, msg:'Enter A Valid Nickname'})
-      } else {  // If the room exists and the password / nickname are valid, proceed
-        let player = new Player(userName, roomName, socket)   // Create a new player
-        ROOM_LIST[roomName].players[socket.id] = player       // Add player to room
-        player.joinTeam()                                     // Distribute player to team
-        socket.emit('joinResponse', {success:true, msg:""})   // Tell client join was successful
-        gameUpdate(roomName)                                  // Update the game for everyone in this room
-        // Server Log
-        logStats(socket.id + "(" + player.nickname + ") JOINED '" + ROOM_LIST[player.room].room + "'(" + Object.keys(ROOM_LIST[player.room].players).length + ")")
-      }
-    }
-  }
-}
-
-// Leave room function
-// Gets the client that left the room and removes them from the room's player list
-function leaveRoom(socket){
-  if (!PLAYER_LIST[socket.id]) return // Prevent Crash
-  let player = PLAYER_LIST[socket.id]              // Get the player that made the request
-  delete PLAYER_LIST[player.id]                    // Delete the player from the player list
-  delete ROOM_LIST[player.room].players[player.id] // Remove the player from their room
-  gameUpdate(player.room)                          // Update everyone in the room
-  // Server Log
-  logStats(socket.id + "(" + player.nickname + ") LEFT '" + ROOM_LIST[player.room].room + "'(" + Object.keys(ROOM_LIST[player.room].players).length + ")")
-  
-  // If the number of players in the room is 0 at this point, delete the room entirely
-  if (Object.keys(ROOM_LIST[player.room].players).length === 0) {
-    delete ROOM_LIST[player.room]
-    logStats("DELETE ROOM: '" + player.room + "'")
-  }
-  socket.emit('leaveResponse', {success:true})     // Tell the client the action was successful
-}
-
-// Disconnect function
-// Called when a client closes the browser tab
-function socketDisconnect(socket){
-  let player = PLAYER_LIST[socket.id] // Get the player that made the request
-  delete SOCKET_LIST[socket.id]       // Delete the client from the socket list
-  delete PLAYER_LIST[socket.id]       // Delete the player from the player list
-
-  if(player){   // If the player was in a room
-    delete ROOM_LIST[player.room].players[socket.id] // Remove the player from their room
-    gameUpdate(player.room)                          // Update everyone in the room
-    // Server Log
-    logStats(socket.id + "(" + player.nickname + ") LEFT '" + ROOM_LIST[player.room].room + "'(" + Object.keys(ROOM_LIST[player.room].players).length + ")")
-    
-    // If the number of players in the room is 0 at this point, delete the room entirely
-    if (Object.keys(ROOM_LIST[player.room].players).length === 0) {
-      delete ROOM_LIST[player.room]
-      logStats("DELETE ROOM: '" + player.room + "'")
-    }
-  }
-  // Server Log
-  logStats('DISCONNECT: ' + socket.id)
-}
-
-
-// Randomize Teams function
-// Will mix up the teams in the room that the client is in
-function randomizeTeams(socket){
-  if (!PLAYER_LIST[socket.id]) return      // Prevent Crash
-  let room = PLAYER_LIST[socket.id].room   // Get the room that the client called from
-  let players = ROOM_LIST[room].players    // Get the players in the room
-
-  let color = 0;    // Get a starting color
-  if (Math.random() < 0.5) color = 1
-
-  let keys = Object.keys(players) // Get a list of players in the room from the dictionary
-  let placed = []                 // Init a temp array to keep track of who has already moved
-  
-  while (placed.length < keys.length){
-    let selection = keys[Math.floor(Math.random() * keys.length)] // Select random player index
-    if (!placed.includes(selection)) placed.push(selection) // If index hasn't moved, move them
-  }
-
-  // Place the players in alternating teams from the new random order
-  for (let i = 0; i < placed.length; i++){
-    let player = players[placed[i]]
-    if (color === 0){
-      player.team = 'red'
-      color = 1
+        socket.emit('joinResponse', { success: false, msg: 'Enter A Valid Nickname' })
     } else {
-      player.team = 'blue'
-      color = 0
+        let player = new Player(username, socket)
+        let room = ROOM_LIST.get(roomName)
+
+        // add player to room
+        room.addPlayer(player)
+        socket.join(room.name)
+        
+        // store player information
+        SOCKET_LIST.get(socket.id).player = player
+        SOCKET_LIST.get(socket.id).room = room
+
+        // Server Log
+        socket.emit('joinResponse', { success: true, msg: "" })
+        gameUpdate(room)
+        logStats(socket.id + "(" + player.nickname + ") JOINED '" + room.name + "'(" + room.getPlayerCount() + ")")
     }
-    player.order = Math.floor(i / 2)
-    player.role = ROLE_GUESSER
-    SOCKET_LIST[placed[i]].emit('switchRole', {role: ROLE_GUESSER})
-  }
-  gameUpdate(room) // Update everyone in the room
 }
 
-// New game function
-// Gets client that requested the new game and instantiates a new game board for the room
-function newGame(socket){
-  if (!PLAYER_LIST[socket.id]) return // Prevent Crash
-  let room = PLAYER_LIST[socket.id].room  // Get the room that the client called from
-  ROOM_LIST[room].game.init();      // Make a new game for that room
+/**
+ * Leave room function
+ * Gets the client that left the room and removes them from the room's player list
+ * 
+ * @param socket Socket of the incoming connection
+ */
+function leaveRoom(socket: Socket) {
+    // if (!PLAYER_LIST.get(socket.id)) return // Prevent Crash
+    // Get the player that made the request
+    let player = SOCKET_LIST.get(socket.id).player
+    let room = SOCKET_LIST.get(socket.id).room
 
-  // Make everyone in the room a guesser and tell their client the game is new
-  for(let player in ROOM_LIST[room].players){
-    PLAYER_LIST[player].role = ROLE_GUESSER;
-    SOCKET_LIST[player].emit('switchRole', {role: ROLE_GUESSER})
-    SOCKET_LIST[player].emit('newGameResponse', {success:true})
-  }
-  gameUpdate(room) // Update everyone in the room
-}
+    room.removePlayer(player)
+    delete SOCKET_LIST.get(socket.id).player
+    delete SOCKET_LIST.get(socket.id).room
 
-// skips the current word
-function skipWord(socket){
-  if (!PLAYER_LIST[socket.id]) return // Prevent Crash
-  let room = PLAYER_LIST[socket.id].room  // Get the room that the client called from
+    // Update everyone in the room
+    gameUpdate(room)
+    // Server Log
+    logStats(socket.id + "(" + player.nickname + ") LEFT '" + room.name + "'(" + room.getPlayerCount() + ")")
 
-  if (PLAYER_LIST[socket.id].team === ROOM_LIST[room].game.turn){ // If it was this players turn
-    if (!ROOM_LIST[room].game.over){  // If the game is not over
-      if (PLAYER_LIST[socket.id].role !== ROLE_GUESSER) { // If the client isnt a guesser
-        ROOM_LIST[room].game.newWord()
-        gameUpdate(room)  // Update everyone in the room
-      }
+    // If the number of players in the room is 0 at this point, delete the room entirely
+    if (room.getPlayerCount() === 0) {
+        ROOM_LIST.delete(room.name)
+        logStats("DELETE ROOM: '" + room.name + "'")
     }
-  }
+
+    // Tell the client the action was successful
+    socket.emit('leaveResponse', { success: true })
 }
 
-// pass to the next player
-function nextPlayer(socket) {
-  if (!PLAYER_LIST[socket.id]) return // Prevent Crash
-  let room = PLAYER_LIST[socket.id].room
+/**
+ * Disconnect function    
+ * Called when a client closes the browser tab
+ * 
+ * @param socket Socket of the incoming connection
+ */
+function socketDisconnect(socket: Socket) {
+    let player = SOCKET_LIST.get(socket.id).player
+    let room = SOCKET_LIST.get(socket.id).room
 
-  if (PLAYER_LIST[socket.id].team === ROOM_LIST[room].game.turn) {
-    if (!ROOM_LIST[room].game.over) {
-      if (PLAYER_LIST[socket.id].role !== ROLE_GUESSER) {
+    // Delete the client from the socket list
+    SOCKET_LIST.delete(socket.id)
+
+    // If the player was in a room
+    if (player) {
+        room.removePlayer(player)           // Remove the player from their room
+        gameUpdate(room)                    // Update everyone in the room
+
+        // Server Log
+        logStats(socket.id + "(" + player.nickname + ") LEFT '" + room.name + "'(" + room.getPlayerCount() + ")")
+
+        // If the number of players in the room is 0 at this point, delete the room entirely
+        if (room.getPlayerCount() === 0) {
+            ROOM_LIST.delete(room.name)
+            logStats("DELETE ROOM: '" + room.name + "'")
+        }
+    }
+    // Server Log
+    logStats('DISCONNECT: ' + socket.id)
+}
+
+/**
+ * 
+ * @param socket 
+ */
+function joinTeam(socket: Socket, data: any) {
+    // if (!PLAYER_LIST.get(socket.id)) return   // Prevent Crash
+
+    let player = SOCKET_LIST.get(socket.id).player;
+    let room = SOCKET_LIST.get(socket.id).room;
+
+    room.joinTeam(player, data.team)
+
+    gameUpdate(room)
+}
+
+/**
+ * Randomize Teams function
+ * Will mix up the teams in the room that the client is in
+ * 
+ * @param socket Socket of the incoming connection
+ */
+function randomizeTeams(socket: Socket) {
+    // if (!PLAYER_LIST.get(socket.id)) return      // Prevent Crash
+    let room = SOCKET_LIST.get(socket.id).room   // Get the room that the client called from
+
+    room.randomizeTeams()
+
+    gameUpdate(room) // Update everyone in the room
+}
+
+/**
+ * New game function
+ * Reset game state for the caller's room
+ * 
+ * @param socket Socket of the incoming connection
+ */
+function newGame(socket: Socket) {
+    // if (!PLAYER_LIST.get(socket.id)) return // Prevent Crash
+    let room = SOCKET_LIST.get(socket.id).room
+    room.game.init();
+
+    switchRole(room, Role.Guesser)
+    gameUpdate(room)
+}
+
+/**
+ * Skips the current phrase 
+ * 
+ * @param socket Socket of the incoming connection
+ */
+function skipWord(socket: Socket) {
+    // if (!PLAYER_LIST.get(socket.id)) return // Prevent Crash
+    let room = SOCKET_LIST.get(socket.id).room
+    let player = SOCKET_LIST.get(socket.id).player
+
+    // If it was this players turn & the game is not over
+    if (player === room.game.currentSpeaker) {
+        if (!room.game.over) {
+            room.game.newWord()
+            gameUpdate(room)
+        }
+    }
+}
+
+/**
+ * Pass turn to the next player
+ * 
+ * @param socket Socket of the incoming connection
+ */
+function nextPlayer(socket: Socket) {
+    // if (!PLAYER_LIST.get(socket.id)) return // Prevent Crash
+    let room = SOCKET_LIST.get(socket.id).room
+    let player = SOCKET_LIST.get(socket.id).player
+
+    if (
+        room.hasPlayer(player, room.game.turn) 
+        && player === room.game.currentSpeaker
+        && !room.game.over
+    ) {
         // get new word if in game
-        if (ROOM_LIST[room].game.timeRunning) ROOM_LIST[room].game.newWord()
-
-        // get the next team
-        let nextTeam = TEAM_BLUE
-        if (PLAYER_LIST[socket.id].team === nextTeam) nextTeam = TEAM_RED
+        if (room.game.timeRunning) room.game.newWord()
 
         // get next player from list
-        let players = getPlayers(room, nextTeam)
-        let next = players[(ROOM_LIST[room].lastPlayers.shift() || 0) + 1]
-        if (next === undefined) next = players[0]
-        if (next === undefined) {
-          gameUpdate(room)
-          return
-        }
-
-        // append order of this player to last list
-        ROOM_LIST[room].lastPlayers.push(PLAYER_LIST[socket.id].order)
+        let nextSpeaker = room.getNextPlayer(room.game.previousSpeaker)
 
         // set the next player as speaker
-        PLAYER_LIST[next].role = ROLE_SPEAKER
-        switchRole(next)
+        room.game.previousSpeaker = room.game.currentSpeaker
+        room.game.currentSpeaker = nextSpeaker
 
-        // set the previous speaker as a guesser
-        PLAYER_LIST[socket.id].role = ROLE_GUESSER
-        switchRole(socket.id)
+        // update players
+        switchRole(room.game.currentSpeaker, Role.Speaker)
+        switchRole(room.game.previousSpeaker, Role.Guesser)
 
         // switch turns
-        ROOM_LIST[room].game.switchTurn()
+        room.game.switchTurn()
 
         gameUpdate(room)
-      }
     }
-  }
 }
 
-// start or stop the round
-function startStop(socket) {
-  if (!PLAYER_LIST[socket.id]) return // Prevent Crash
-  let room = PLAYER_LIST[socket.id].room  // Get the room that the client called from
+/**
+ * Starts/stops the round
+ * 
+ * @param socket Socket of the incoming connection
+ */
+function startStop(socket: Socket) {
+    // if (!PLAYER_LIST.get(socket.id)) return // Prevent Crash
+    let room = SOCKET_LIST.get(socket.id).room
 
-  if (ROOM_LIST[room].game.timeRunning) {
-    ROOM_LIST[room].game.timeRunning = false
-    gameUpdate(room)
-  } else {
-    for (let player in ROOM_LIST[room].players) {
-      PLAYER_LIST[player].role = ROLE_GUESSER
-      switchRole(player)
+    if (room.game.timeRunning) {
+        room.game.timeRunning = false
+        gameUpdate(room)
+    } else {
+        switchRole(room, Role.Guesser)
+
+        let player = SOCKET_LIST.get(socket.id).player
+        room.game.previousSpeaker = room.game.currentSpeaker
+        room.game.currentSpeaker = player
+        switchRole(player, Role.Speaker)
+
+        room.game.timer = room.game.timerStart
+        room.game.turn = room.getTeamForPlayer(player)
+        room.game.timeRunning = true
+        room.game.roundOver = false
+        room.game.newWord()
+
+        gameUpdate(room)
+    }
+}
+
+/**
+ * Logs reported phrase to file
+ * 
+ * @param socket Socket of the incoming connection
+ */
+function reportPhrase(socket: Socket) {
+    let room = SOCKET_LIST.get(socket.id).room
+    let phrase = room.game.currentPhrase
+    appendFile('./reported-phrases', phrase + '\n', (err) => {
+        if (err) throw err
+        console.log('logged reported phrase: ' + phrase)
+    })
+}
+
+/**
+ * Update the current score and check for win
+ * 
+ * @param socket Socket of the incoming connection
+ * @param data Data sent by caller
+ */
+function updateScore(socket: Socket, data: any) {
+    // if (!PLAYER_LIST.get(socket.id)) return
+    let room = SOCKET_LIST.get(socket.id).room
+
+    room.game.roundOver = false
+    if (room.game.turn === Team.Red) {
+        room.game.scoreBlue += data.score
+    } else {
+        room.game.scoreRed += data.score
     }
 
-    PLAYER_LIST[socket.id].role = ROLE_SPEAKER
-    switchRole(socket.id)
-
-    ROOM_LIST[room].game.timer = ROOM_LIST[room].game.timerAmount
-    ROOM_LIST[room].game.turn = PLAYER_LIST[socket.id].team
-    ROOM_LIST[room].game.timeRunning = true
-    ROOM_LIST[room].game.roundOver = false
-    ROOM_LIST[room].game.newWord()
+    room.game.checkWin()
 
     gameUpdate(room)
-  }
 }
 
-// log reported phrase
-function reportPhrase(socket) {
-  let room = PLAYER_LIST[socket.id].room
-  let phrase = ROOM_LIST[room].game.word
-  appendFile('./reported-phrases', phrase + '\n', (err) => {
-    if (err) throw err
-    console.log('logged reported phrase: ' + phrase)
-  })
+/**
+ * Updates the role of the specified client
+ * 
+ * @param client Client to update. Player to update that player, or Room to update entire room
+ * @param role Role to set client to
+ */
+function switchRole(client: Player|Room, role: Role) {
+    // if (!SOCKET_LIST.get(player)) return
+    if (client instanceof Player) {
+        SOCKET_LIST.get(client.id).socket.emit('switchRole', { role: role })
+    } else {
+        io.to(client.name).emit('switchRole', { role: role })
+    }
 }
 
-// update the score
-function updateScore(socket, data) {
-  if (!PLAYER_LIST[socket.id]) return
-  let room = PLAYER_LIST[socket.id].room
+/**
+ * Update which packs are currently selected
+ * 
+ * @param socket Socket of the incoming connection
+ * @param data Information from the socket
+ */
+function switchPacks(socket: Socket, data: any) {
+    // if (!PLAYER_LIST.get(socket.id)) return // Prevent Crash
+    let room = SOCKET_LIST.get(socket.id).room
+    let game = room.game
+    let list = data.pack
 
-  ROOM_LIST[room].game.roundOver = false
-  if (ROOM_LIST[room].game.turn === TEAM_RED) ROOM_LIST[room].game.blue += data.score
-  else ROOM_LIST[room].game.red += data.score
+    if (game.selectedLists.includes(list)) {
+        game.selectedLists.splice(game.selectedLists.indexOf(list), 1)
+    } else {
+        game.selectedLists.push(data.pack)
+    }
 
-  ROOM_LIST[room].game.checkWin()
-
-  gameUpdate(room)
+    game.updateWordPool()
+    gameUpdate(room)
 }
 
-// Get a list of players on a team
-function getPlayers(room, team) {
-  let teamPlayers = []
-
-  for (let player in ROOM_LIST[room].players) {
-    if (PLAYER_LIST[player].team === team) teamPlayers[PLAYER_LIST[player].order] = PLAYER_LIST[player].id
-  }
-  return teamPlayers
+/**
+ * Update the timer length to a new value
+ * 
+ * @param socket Socket of the incoming connection
+ * @param data Data passed from the caller
+ */
+function changeTimer(socket:Socket, data: any) {
+    // if (!PLAYER_LIST.get(socket.id)) return // Prevent Crash
+    let room = SOCKET_LIST.get(socket.id).room
+    let currentAmount = room.game.timerStart - 1  // Current timer amount
+    let seconds = (data.value * 60) + 1       // the new amount of the slider
+    if (currentAmount !== seconds) {           // if they dont line up, update clients
+        room.game.timerStart = seconds
+        room.game.timer = room.game.timerStart
+        gameUpdate(room)
+    }
 }
 
-// Switch role function
-function switchRole(player){
-  if (!SOCKET_LIST[player]) return
-  SOCKET_LIST[player].emit('switchRole' , {role: PLAYER_LIST[player].role});
-  gameUpdate(PLAYER_LIST[player].room)                   // Update everyone in the room
+/**
+ * Update the gamestate for every client in the room that is passed to this function
+ * 
+ * @param room Room to update
+ */
+function gameUpdate(room: Room) {
+    // Create data package to send to the client
+    let gameState = room 
+
+    io.in(room.name).emit('gameState', gameState)
 }
 
-// Update the gamestate for every client in the room that is passed to this function
-function gameUpdate(room){
-  // Create data package to send to the client
-  let gameState = {
-    room: room,
-    players: ROOM_LIST[room].players,
-    game: ROOM_LIST[room].game,
-  }
-  for (let player in ROOM_LIST[room].players){ // For everyone in the passed room
-    gameState.team = PLAYER_LIST[player].team  // Add specific clients team info
-    SOCKET_LIST[player].emit('gameState', gameState)  // Pass data to the client
-  }
-}
-
-function logStats(addition){
-  let inLobby = Object.keys(SOCKET_LIST).length - Object.keys(PLAYER_LIST).length
-  let stats = '[R:' + Object.keys(ROOM_LIST).length + " P:" + Object.keys(PLAYER_LIST).length + " L:" + inLobby + "] "
-  console.log(stats + addition)
+/**
+ * Print line to log
+ * 
+ * @param extraInfo Extra info to be appended to the log line 
+ */
+function logStats(extraInfo: string) {
+    let stats = '[R:' + Object.keys(ROOM_LIST).length + "  C:" + Object.keys(SOCKET_LIST).length + '] '
+    console.log(stats + extraInfo)
 }
 
 // Restart Server
-function serverRestart(){
-  // Let each socket know the server restarted and boot them to lobby
-  for (let socket in SOCKET_LIST){
-    SOCKET_LIST[socket].emit('serverMessage', {msg:"Server Successfully Restarted for Maintnence"})
-    SOCKET_LIST[socket].emit('leaveResponse', {success:true})
-  }
-  console.log('Server going down for restart')
-  process.exit(0)
+function serverRestart() {
+    // Let each socket know the server restarted and boot them to lobby
+    for (let roomName of ROOM_LIST.keys()) {
+        io.to(roomName).emit('serverMessage', { msg: "Server Successfully Restarted for Maintnence" })
+        io.to(roomName).emit('leaveResponse', { success: true })
+    }
+    console.log('Server going down for restart')
+    process.exit(0)
 }
 
 // Warn users of restart
-function serverRestartWarning(){
-  for (let player in PLAYER_LIST){
-    SOCKET_LIST[player].emit('serverMessage', {msg:"Scheduled Server Restart in 10 Minutes"})
-  }
+function serverRestartWarning() {
+    for (let roomName in ROOM_LIST.keys()) {
+        io.to(roomName).emit('serverMessage', { msg: "Scheduled Server Restart in 10 Minutes" })
+    }
 }
 
 // Every second, update the timer in the rooms that are on timed mode
-setInterval(()=>{
-  // Server Daily Restart Logic
-  let time = new Date()
-  // Warn clients of restart 10min in advance
-  if (time.getHours() === restartWarningHour &&
-      time.getMinutes() === restartWarningMinute &&
-      time.getSeconds() < restartWarningSecond) serverRestartWarning()
-  // Restart server at specified time
-  if (time.getHours() === restartHour &&
-      time.getMinutes() === restartMinute &&
-      time.getSeconds() < restartSecond) serverRestart()
-  
-  // AFK Logic
-  for (let player in PLAYER_LIST){
-    PLAYER_LIST[player].afktimer--      // Count down every players afk timer
-    // Give them a warning 5min before they get kicked
-    if (PLAYER_LIST[player].afktimer < 300) SOCKET_LIST[player].emit('afkWarning')
-    if (PLAYER_LIST[player].afktimer < 0) {   // Kick player if their timer runs out
-      SOCKET_LIST[player].emit('afkKicked')
-      logStats(player + "(" + PLAYER_LIST[player].nickname + ") AFK KICKED FROM '" + ROOM_LIST[PLAYER_LIST[player].room].room + "'(" + Object.keys(ROOM_LIST[PLAYER_LIST[player].room].players).length + ")")
-      leaveRoom(SOCKET_LIST[player])
-    }
-  }
-  // Game Timer Logic
-  for (let room in ROOM_LIST){
-    if (ROOM_LIST[room].game.timeRunning){
-      ROOM_LIST[room].game.timer-- 
+setInterval(() => {
+    // Server Daily Restart Logic
+    let time = new Date()
+    if (time.getHours() === restartConfig.warningHour &&
+        time.getMinutes() === restartConfig.warningMinute &&
+        time.getSeconds() < restartConfig.warningSecond) serverRestartWarning()
+    // Restart server at specified time
+    if (time.getHours() === restartConfig.hour &&
+        time.getMinutes() === restartConfig.minute &&
+        time.getSeconds() < restartConfig.second) serverRestart()
 
-      // If timer runs out, end the round
-      if (ROOM_LIST[room].game.timer <= 0){
-        ROOM_LIST[room].game.timeRunning = false
-        ROOM_LIST[room].game.roundOver = true
-        gameUpdate(room)   // Update everyone in the room
-      }
-      
-      // Update the timer value to every client in the room
-      for (let player in ROOM_LIST[room].players){
-        SOCKET_LIST[player].emit('timerUpdate', {timer:ROOM_LIST[room].game.timer})
-      }
+    // AFK Logic
+    for (let [id, store] of SOCKET_LIST) {
+        if (store.player === undefined) continue 
+        let player = store.player
+        
+        player.afktimer--      // Count down every players afk timer
+
+        // Give them a warning 5min before they get kicked
+        if (player.afktimer < 300) store.socket.emit('afkWarning')
+        if (player.afktimer < 0) {   // Kick player if their timer runs out
+            store.socket.emit('afkKicked')
+            logStats(player + "(" + player.nickname + ") AFK KICKED FROM '" + store.room.name + "'(" + store.room.getPlayerCount + ")")
+            leaveRoom(store.socket)
+        }
     }
-  }
-}, 1000)
+
+    // Game Timer Logic
+    for (let room of ROOM_LIST.values()) {
+        if (room.game.timeRunning) {
+            room.game.timer--
+
+            // If timer runs out, end the round
+            if (room.game.timer <= 0) {
+                room.game.timeRunning = false
+                room.game.roundOver = true
+                gameUpdate(room)   // Update everyone in the room
+            }
+
+            // Update the timer value to every client in the room
+            io.to(room.name).emit('timerUpdate', { timer: room.game.timer })
+        }
+    }
+}, 1000) // every second

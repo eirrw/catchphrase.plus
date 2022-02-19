@@ -2,6 +2,7 @@ import { readdirSync, createReadStream } from 'fs'
 import { parse } from 'path'
 import { createInterface } from 'readline'
 import { Team } from '../shared/enum'
+import Player from './player'
 
 const WORDS_PATH = "./server/words/"
 
@@ -19,7 +20,7 @@ phraseFiles.forEach(wordfile => {
     }).on('line', (line) => { if (line.charAt(0) !== '#') words.push(line) })
 
     phraseLists[parse(wordfile).name] = words
-});
+})
 
 // Codenames Game
 export default class Game {
@@ -30,8 +31,8 @@ export default class Game {
         'the_world',
         'variety',
     ]
-    readonly DEFAULT_TIMER = 61;
-    readonly SCORE_TO_WIN = 7;
+    readonly DEFAULT_TIMER = 61
+    readonly SCORE_TO_WIN = 7
 
     /** available word lists to choose from */
     availableLists: string[] = []
@@ -46,37 +47,47 @@ export default class Game {
     usedPhrases: string[] = []
 
     /** if the game has been won/lost */
-    over: boolean;
+    over: boolean
 
     /** if the current round is over */
-    roundOver: boolean;
+    roundOver: boolean
 
     /** which team is the winner */
-    winner: Team;
+    winner: Team
 
     /** the team whose turn it is */
-    turn: Team;
+    turn: Team
 
     /** current value of the timer */
-    timer: number = this.DEFAULT_TIMER;
+    timer: number
+
+    /** Starting value of the time */
+    timerStart: number
 
     /** if the timer is currently running */
-    timeRunning: boolean;
+    timeRunning: boolean
 
     /** current score for red */
-    scoreRed: number;
+    scoreRed: number
 
     /** current score for blue */
-    scoreBlue: number;
+    scoreBlue: number
 
     /** current word being guessed */
-    currentPhrase: string;
+    currentPhrase: string
+
+    /** current speaker */
+    currentSpeaker: Player
+
+    /** previous speaker */
+    previousSpeaker: Player
 
     constructor() {
         this.availableLists = Object.keys(phraseLists)
+        this.timerStart = this.DEFAULT_TIMER
         
         this.updateWordPool()
-        this.init();
+        this.init()
     }
 
     /**
@@ -86,10 +97,11 @@ export default class Game {
         this.over = false                   // Whether or not the game has been won / lost
         this.roundOver = true               // Whether or not the round is over
         this.winner = Team.Undecided        // Winning team
-        this.timer = this.DEFAULT_TIMER     // Set the timer
+        this.timer = this.timerStart        // Set the timer
         this.timeRunning = false            // if the timer should be running
-        this.scoreRed = this.scoreBlue = 0; // initial score
+        this.scoreRed = this.scoreBlue = 0  // initial score
         this.turn = Team.Undecided
+        this.currentSpeaker = null
 
         this.currentPhrase = ''       // Init the board
         this.newWord()   // get a new word
@@ -154,7 +166,7 @@ export default class Game {
             } else {
                 pool = pool.concat(phraseLists[list])
             }
-        });
+        })
         
         this.availablePhrases = pool
     }
